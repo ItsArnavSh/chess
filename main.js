@@ -64,28 +64,31 @@
     gamer.h7 = bp1;
     console.log(gamer);
     //Display the pieces
-    for(let i = 0;i<keys.length;i++)
-    {
-        if(gamer[keys[i].id]!=null)
-        {
-            const img = document.createElement("img");
-            img.src = gamer[keys[i].id].img;
-            img.height = 55;
-            img.style.backgroundColor = 'transparent';
-            img.style.pointerEvents = 'none';
-            keys[i].appendChild(img);
-        }
-    }
+    display();
+    let k = [],chosen = null;
     for(let i = 0;i<keys.length;i++)
     {
         keys[i].onclick = ({target})=>{
-        const key = target.getAttribute("id");
         clear();
+        const key = target.getAttribute("id");
+        console.log(k);
+        if(k.includes(key))
+        {
+            console.log(`Went from ${chosen} to ${key}`);
+            gamer[key] = gamer[chosen];
+            gamer[chosen] = null;
+            display();
+        }
+        else
+        {
+            k = [];
+        }
         if(gamer[key]!=null)
         {
+            chosen = key;
         if(gamer[key].team===turn)
             {
-                const k = moves(key);
+                k = moves(key);
                 console.log(k);
                 for(let j=0;j<k.length;j++)
                 {
@@ -432,10 +435,31 @@
     }
     return gamer;
     };
-    //Making objects
-    //Movement notation
-    /*
-        updown,leftright,diag,alive,max
-    */
-    ///////
+    function display()
+    {
+        for(let i = 0;i<keys.length;i++)
+    {
+        if(gamer[keys[i].id]!=null && !keys[i].querySelector('img'))
+        {
+            const img = document.createElement("img");
+            img.src = gamer[keys[i].id].img;
+            img.height = 55;
+            img.style.backgroundColor = 'transparent';
+            img.style.pointerEvents = 'none';
+            keys[i].appendChild(img);
+        }
+        else if(gamer[keys[i].id]!=null && keys[i].querySelector('img'))
+        {
+            continue;
+        }
+        else
+        { 
+        
+            if(keys[i].querySelector('img')) {
+                let img = keys[i].querySelector('img');
+                keys[i].removeChild(img);
+            }
+            
+        }}
+    }
     });
