@@ -23,17 +23,17 @@
     let wq1 = new Creator(1,1,"pieces/queen-w.svg");
     gamer.d1 = wq1;
     let wr1 = new Creator(2,1,"pieces/rook-w.svg");
-    gamer.a1 = wr1;
+    gamer.e5 = wr1;
     gamer.h1 = wr1;
     let wb1 = new Creator(4,1,"pieces/bishop-w.svg");
-    gamer.c1 = wb1;
+    gamer.d4 = wb1;
     gamer.f1 = wb1;
     let wn1 = new Creator(3,1,"pieces/knight-w.svg");
     gamer.b1 = wn1;
     gamer.g1 = wn1;
     let wp1 = new Creator(5,1,"pieces/pawn-w.svg");
-    gamer.a2 = wp1;
     gamer.b2 = wp1;
+    gamer.c3 = wp1;
     gamer.c2 = wp1;
     gamer.d2 = wp1;
     gamer.e2 = wp1;
@@ -86,6 +86,7 @@
         if(gamer[key].team===turn)
             {
                 const k = moves(key);
+                console.log(k);
                 for(let j=0;j<k.length;j++)
                 {
                     let change = document.getElementById(k[j]);
@@ -153,6 +154,14 @@
         {
             return(pawn(piece));
         }
+        else if(gamer[piece].type===2)
+        {
+            return(rook(piece));
+        }
+        else if(gamer[piece].type===4)
+        {
+            return(bishop(piece));
+        }
         //we will make functions that return what each function will do
         //moves is the list of all the possible moves
     }
@@ -171,7 +180,89 @@
     function rook(piece)
     {
         let moves = [];
-
+        let pi=piece;
+        console.log(pi);
+        //up
+        while(true)
+        {
+            pi = changeCoord(pi,0,1);
+            if(parseInt(pi[1],10)<=8)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,0,-1);
+            if(parseInt(pi[1],10)>=1)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        //across
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,1,0);
+            if(pi[0].charCodeAt(0)-96<=8)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,-1,0);
+            if(pi[0].charCodeAt(0)-96>=1)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
         return moves;
     }
     function knight(piece)
@@ -183,7 +274,89 @@
     function bishop(piece)
     {
         let moves = [];
-        
+        let pi=piece;
+        console.log(pi);
+        //up
+        while(true)
+        {
+            pi = changeCoord(pi,0,1);
+            if(parseInt(pi[1],10)<=8)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,0,-1);
+            if(parseInt(pi[1],10)>=1)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        //across
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,1,0);
+            if(pi[0].charCodeAt(0)-96<=8)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
+        pi = piece;
+        while(true)
+        {
+            pi = changeCoord(pi,-1,0);
+            if(pi[0].charCodeAt(0)-96>=1)
+            {
+                if(gamer[pi]==null)
+                    moves.push(pi);
+                else
+                {
+                    if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+                    break;
+                } 
+            }
+            else
+                break;
+        }
         return moves;
     }
     function pawn(piece)
@@ -194,19 +367,26 @@
         if(!checkOccupied(possible))
         {
             moves.push(possible);
-        if(piece[1]==2 && turn === 1)
+        if(piece[1]==2)
         {
             possible = `${piece[0]}${parseInt(piece[1],10)+2}`;
             if(!checkOccupied(possible))
                 moves.push(possible);
         }}
         //checking left attack
-        if(piece[0]!='a' && checkOccupied(`${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`))
-            moves.push(`${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`);
+        let left = `${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`;
+        if(piece[0]!='a' && checkOccupied(left) && turn!=gamer[left].team)
+            moves.push(left);
         //right attack
-        if(piece[0]!='h'  && checkOccupied(`${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`))
-            moves.push(`${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`);
+        let right = `${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`
+        if(piece[0]!='h'  && checkOccupied(right) && turn!=gamer[right].team)
+            moves.push(right);
         return moves;
+    }
+    //function to change the coordinate
+    function changeCoord(piece,x,y)
+    {
+        return `${String.fromCharCode(piece.charCodeAt(0)+x)}${parseInt(piece[1],10)+y}`;
     }
     //To set the board      
     function setElements()
