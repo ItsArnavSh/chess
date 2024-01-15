@@ -1,9 +1,11 @@
 
     document.addEventListener("DOMContentLoaded",()=>{
     //main
-    let turn = 1;// 1 means white and 0 means black     
+    let turn = 1;// 1 means white and 0 means black    
     let gamer = setElements();
-    console.log(gamer);
+    let attack=[[],[]]//To track places where check is possible
+    //attack[0] shows all the places that can be attacked by black
+    //attack[1] shows all the places that can be attacked by white
     //Marking the buttons
     const keys = document.querySelectorAll(".box");
     for(let i = 0;i<keys.length;i++)
@@ -21,19 +23,19 @@
     //5 for pawn
     gamer.e1 = new Creator(0,1,"pieces/king-w.svg");
     let wq1 = new Creator(1,1,"pieces/queen-w.svg");
-    gamer.d4 = wq1;
+    gamer.d1 = wq1;
     let wr1 = new Creator(2,1,"pieces/rook-w.svg");
-    gamer.e5 = wr1;
+    gamer.a1 = wr1;
     gamer.h1 = wr1;
     let wb1 = new Creator(4,1,"pieces/bishop-w.svg");
-    gamer.d5 = wb1;
+    gamer.c1 = wb1;
     gamer.f1 = wb1;
     let wn1 = new Creator(3,1,"pieces/knight-w.svg");
     gamer.b1 = wn1;
     gamer.g1 = wn1;
     let wp1 = new Creator(5,1,"pieces/pawn-w.svg");
     gamer.b2 = wp1;
-    gamer.c3 = wp1;
+    gamer.a2 = wp1;
     gamer.c2 = wp1;
     gamer.d2 = wp1;
     gamer.e2 = wp1;
@@ -58,11 +60,10 @@
     gamer.b7 = bp1;
     gamer.c7 = bp1;
     gamer.d7 = bp1;
-    gamer.e3 = bp1;
+    gamer.e7 = bp1;
     gamer.f7 = bp1;
     gamer.g7 = bp1;
     gamer.h7 = bp1;
-    console.log(gamer);
     //Display the pieces
     display();
     let k = [],chosen = null;
@@ -71,12 +72,33 @@
         keys[i].onclick = ({target})=>{
         clear();
         const key = target.getAttribute("id");
-        console.log(k);
-        if(k.includes(key))
+        if(k.includes(key)&& chosen!=key)
         {
             console.log(`Went from ${chosen} to ${key}`);
+            if(gamer[key]!=null)
+            {
+                if(gamer[key].type==0)
+            {
+                console.log("won");
+                //Display I won
+            }
+                const ke = document.querySelector(`#${key}`);
+                let img = ke.querySelector('img');
+                ke.removeChild(img);
+            }
+            
             gamer[key] = gamer[chosen];
             gamer[chosen] = null;
+            attack[turn]=[];
+            turn=!turn;
+            console.log(turn);
+            if((parseInt(key[1],10)==8&&gamer[key].team==1))
+            {
+                gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
+            }
+            if((parseInt(key[1],10)==1)&&gamer[key].team==0)
+                gamer[key]=new Creator(1,0,"pieces/queen-b.svg");
+            k=[];
             display();
         }
         else
@@ -86,10 +108,10 @@
         if(gamer[key]!=null)
         {
             chosen = key;
-        if(gamer[key].team===turn)
+        if(gamer[key].team==turn)
             {
                 k = moves(key);
-                console.log(k);
+
                 for(let j=0;j<k.length;j++)
                 {
                     let change = document.getElementById(k[j]);
@@ -172,17 +194,37 @@
         {
             return(knight(piece));
         }
+        else
+        {
+            return(king(piece));
+        }
         //we will make functions that return what each function will do
         //moves is the list of all the possible moves
     }
     function king(piece)
     {
         let moves = [];
+        let checkThese = [[-1,1],[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0]];
+        for(var i = 0;i<checkThese.length;i++)
+        {
+            var pi = changeCoord(piece,checkThese[i][0],checkThese[i][1]);
+            if(pi in gamer)
+            {
+                if(!checkOccupied(pi))
+                moves.push(pi);
+                else if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+            }
+        }
+
         return moves;
     }
     function queen(piece)
     {
         let moves = [];
+        
         moves = bishop(piece);
         moves = moves.concat(rook(piece));
         return moves;
@@ -191,7 +233,6 @@
     {
         let moves = [];
         let pi=piece;
-        console.log(pi);
         //up
         while(true)
         {
@@ -300,7 +341,6 @@
     {
         let moves = [];
         let pi=piece;
-        console.log(pi);
         //up
         while(true)
         {
@@ -386,24 +426,30 @@
     }
     function pawn(piece)
     {
+        let direction;
+        if(gamer[piece].team==1)
+        direction=1;
+        else
+        direction=-1;
         let possible;
         let moves = [];
-        possible = `${piece[0]}${parseInt(piece[1],10)+1}`;
+        possible = `${piece[0]}${parseInt(piece[1],10)+direction}`;
+        console.log("Move: "+piece[1]);
         if(!checkOccupied(possible))
         {
             moves.push(possible);
-        if(piece[1]==2)
+        if((piece[1]==2 && gamer[piece].team==1) || (piece[1]==7&& gamer[piece].team==0))
         {
-            possible = `${piece[0]}${parseInt(piece[1],10)+2}`;
+            possible = `${piece[0]}${parseInt(piece[1],10)+2*direction}`;
             if(!checkOccupied(possible))
                 moves.push(possible);
         }}
         //checking left attack
-        let left = `${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`;
+        let left = `${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+direction}`;
         if(piece[0]!='a' && checkOccupied(left) && turn!=gamer[left].team)
             moves.push(left);
         //right attack
-        let right = `${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`
+        let right = `${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+direction}`
         if(piece[0]!='h'  && checkOccupied(right) && turn!=gamer[right].team)
             moves.push(right);
         return moves;
@@ -455,7 +501,8 @@
         else
         { 
         
-            if(keys[i].querySelector('img')) {
+            if(keys[i].querySelector('img'))
+            {
                 let img = keys[i].querySelector('img');
                 keys[i].removeChild(img);
             }
