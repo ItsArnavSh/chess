@@ -1,6 +1,7 @@
 
     document.addEventListener("DOMContentLoaded",()=>{
     //main
+    let turn = 1;// 1 means white and 0 means black     
     let gamer = setElements();
     console.log(gamer);
     //Marking the buttons
@@ -9,7 +10,6 @@
     {
         keys[i].onclick = ({target})=>{
         const key = target.getAttribute("id");
-        console.log(key);
         };
     }
     //Making a constructor function for the pieces
@@ -19,20 +19,19 @@
     //3 for knight
     //4 for bishop
     //5 for pawn
-    let wk1 = new Creator(0,1,"pieces/king-w");
-    gamer.e1 = wk1;
-    let wq1 = new Creator(1,1,"pieces/queen-w");
+    gamer.e1 = new Creator(0,1,"pieces/king-w.svg");
+    let wq1 = new Creator(1,1,"pieces/queen-w.svg");
     gamer.d1 = wq1;
-    let wr1 = new Creator(2,1,"pieces/rook-w");
+    let wr1 = new Creator(2,1,"pieces/rook-w.svg");
     gamer.a1 = wr1;
     gamer.h1 = wr1;
-    let wb1 = new Creator(4,1,"pieces/bishop-w");
+    let wb1 = new Creator(4,1,"pieces/bishop-w.svg");
     gamer.c1 = wb1;
     gamer.f1 = wb1;
-    let wn1 = new Creator(3,1,"pieces/knight-w");
+    let wn1 = new Creator(3,1,"pieces/knight-w.svg");
     gamer.b1 = wn1;
     gamer.g1 = wn1;
-    let wp1 = new Creator(5,1,"pieces/pawn-w");
+    let wp1 = new Creator(5,1,"pieces/pawn-w.svg");
     gamer.a2 = wp1;
     gamer.b2 = wp1;
     gamer.c2 = wp1;
@@ -41,29 +40,82 @@
     gamer.f2 = wp1;
     gamer.g2 = wp1;
     gamer.h2 = wp1;
-    let bk1 = new Creator(0,0,"pieces/king-b");
+    let bk1 = new Creator(0,0,"pieces/king-b.svg");
     gamer.e8 = bk1;
-    let bq1 = new Creator(1,0,"pieces/queen-b");
+    let bq1 = new Creator(1,0,"pieces/queen-b.svg");
     gamer.d8 = bq1;
-    let br1 = new Creator(2,0,"pieces/rook-b");
+    let br1 = new Creator(2,0,"pieces/rook-b.svg");
     gamer.a8 = br1;
     gamer.h8 = br1;
-    let bb1 = new Creator(4,0,"pieces/bishop-b");
+    let bb1 = new Creator(4,0,"pieces/bishop-b.svg");
     gamer.c8 = bb1;
     gamer.f8 = bb1;
-    let bn1 = new Creator(3,0,"pieces/knight-b");
+    let bn1 = new Creator(3,0,"pieces/knight-b.svg");
     gamer.b8 = bn1;
     gamer.g8 = bn1;
-    let bp1 = new Creator(5,0,"pieces/pawn-b");
+    let bp1 = new Creator(5,0,"pieces/pawn-b.svg");
     gamer.a7 = bp1;
     gamer.b7 = bp1;
     gamer.c7 = bp1;
     gamer.d7 = bp1;
-    gamer.e7 = bp1;
+    gamer.e3 = bp1;
     gamer.f7 = bp1;
     gamer.g7 = bp1;
     gamer.h7 = bp1;
     console.log(gamer);
+    //Display the pieces
+    for(let i = 0;i<keys.length;i++)
+    {
+        if(gamer[keys[i].id]!=null)
+        {
+            const img = document.createElement("img");
+            img.src = gamer[keys[i].id].img;
+            img.height = 55;
+            img.style.backgroundColor = 'transparent';
+            img.style.pointerEvents = 'none';
+            keys[i].appendChild(img);
+        }
+    }
+    for(let i = 0;i<keys.length;i++)
+    {
+        keys[i].onclick = ({target})=>{
+        const key = target.getAttribute("id");
+        clear();
+        if(gamer[key]!=null)
+        {
+        if(gamer[key].team===turn)
+            {
+                const k = moves(key);
+                for(let j=0;j<k.length;j++)
+                {
+                    let change = document.getElementById(k[j]);
+                    if(checkOccupied(k[j]))
+                    {
+                        change.style.border = '2px solid red';
+                        change.classList.add("red");
+                    }
+                    else
+                    {
+                    let indicator = document.createElement("img");
+                    indicator.src = "pieces/blackDot.png";
+                    indicator.height=20;
+                    indicator.classList.add("temp");
+                    indicator.style.backgroundColor = 'transparent';
+                    indicator.style.pointerEvents = 'none';
+                    indicator.style.opacity = '0.5';
+                    
+                    change.appendChild(indicator);
+                    }
+                }
+
+            }
+        else
+        {
+            console.log("nope");    
+        }
+    }
+        };
+    }
     //Functions
     //Function to make objects for pieces
     function Creator(type,team,image)
@@ -72,11 +124,90 @@
         this.team = team;
         this.img = image
         this.alive = 1;
-        //type 0,1,2,3,4,5,6 for king,queen,pawn,knight,bishop,rook
         //team 0 for black,1 for white
         //id = index no of the piece, like there are 8 pawns, so which one?
     }
-    //To make an empty 2d array
+        function clear() {
+            let elements = document.getElementsByClassName('temp');
+            while(elements.length > 0){
+                elements[0].parentNode.removeChild(elements[0]);
+            }
+            elements = document.getElementsByClassName('red');
+            for(let l = 0;l<elements.length;l++)
+            {
+                elements[l].style.border = "1px solid black";
+            }
+        }
+    
+    function checkOccupied(block)
+    {
+        if(gamer[block]!=null)
+            return true;
+        return false;
+    }
+    //To determine moves
+    function moves(piece)
+    {
+        //piece is the string of current block we are in
+        if(gamer[piece].type==5)
+        {
+            return(pawn(piece));
+        }
+        //we will make functions that return what each function will do
+        //moves is the list of all the possible moves
+    }
+    function king(piece)
+    {
+        let moves = [];
+
+        return moves;
+    }
+    function queen(piece)
+    {
+        let moves = [];
+
+        return moves;
+    }
+    function rook(piece)
+    {
+        let moves = [];
+
+        return moves;
+    }
+    function knight(piece)
+    {
+        let moves = [];
+
+        return moves;
+    }
+    function bishop(piece)
+    {
+        let moves = [];
+        
+        return moves;
+    }
+    function pawn(piece)
+    {
+        let possible;
+        let moves = [];
+        possible = `${piece[0]}${parseInt(piece[1],10)+1}`;
+        if(!checkOccupied(possible))
+        {
+            moves.push(possible);
+        if(piece[1]==2 && turn === 1)
+        {
+            possible = `${piece[0]}${parseInt(piece[1],10)+2}`;
+            if(!checkOccupied(possible))
+                moves.push(possible);
+        }}
+        //checking left attack
+        if(piece[0]!='a' && checkOccupied(`${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`))
+            moves.push(`${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+1}`);
+        //right attack
+        if(piece[0]!='h'  && checkOccupied(`${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`))
+            moves.push(`${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+1}`);
+        return moves;
+    }
     //To set the board      
     function setElements()
     {
