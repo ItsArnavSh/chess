@@ -21,12 +21,12 @@
     //5 for pawn
     gamer.e1 = new Creator(0,1,"pieces/king-w.svg");
     let wq1 = new Creator(1,1,"pieces/queen-w.svg");
-    gamer.d1 = wq1;
+    gamer.d4 = wq1;
     let wr1 = new Creator(2,1,"pieces/rook-w.svg");
     gamer.e5 = wr1;
     gamer.h1 = wr1;
     let wb1 = new Creator(4,1,"pieces/bishop-w.svg");
-    gamer.d4 = wb1;
+    gamer.d5 = wb1;
     gamer.f1 = wb1;
     let wn1 = new Creator(3,1,"pieces/knight-w.svg");
     gamer.b1 = wn1;
@@ -104,7 +104,6 @@
                     indicator.style.backgroundColor = 'transparent';
                     indicator.style.pointerEvents = 'none';
                     indicator.style.opacity = '0.5';
-                    
                     change.appendChild(indicator);
                     }
                 }
@@ -162,19 +161,27 @@
         {
             return(bishop(piece));
         }
+        else if(gamer[piece].type===1)
+        {
+            return(queen(piece));
+        }
+        else if(gamer[piece].type===3)
+        {
+            return(knight(piece));
+        }
         //we will make functions that return what each function will do
         //moves is the list of all the possible moves
     }
     function king(piece)
     {
         let moves = [];
-
         return moves;
     }
     function queen(piece)
     {
         let moves = [];
-
+        moves = bishop(piece);
+        moves = moves.concat(rook(piece));
         return moves;
     }
     function rook(piece)
@@ -268,7 +275,22 @@
     function knight(piece)
     {
         let moves = [];
-
+        //permutations of 2,1,-2,-1
+        //2,1|-2,1|2,-1|-2,-1|1,2|-1,2|-1,2|-1,-2
+        let checkThese = [[2,1],[-2,1],[2,-1],[-2,-1],[1,2],[-1,2],[1,-2],[-1,-2]];
+        for(var i = 0;i<checkThese.length;i++)
+        {
+            var pi = changeCoord(piece,checkThese[i][0],checkThese[i][1]);
+            if(pi in gamer)
+            {
+                if(!checkOccupied(pi))
+                moves.push(pi);
+                else if(gamer[pi].team!=turn)
+                    {
+                        moves.push(pi);
+                    }
+            }
+        }
         return moves;
     }
     function bishop(piece)
@@ -279,8 +301,8 @@
         //up
         while(true)
         {
-            pi = changeCoord(pi,0,1);
-            if(parseInt(pi[1],10)<=8)
+            pi = changeCoord(pi,1,1);
+            if(parseInt(pi[1],10)<=8 && pi[0].charCodeAt(0)-96<=8)//checked
             {
                 if(gamer[pi]==null)
                     moves.push(pi);
@@ -299,8 +321,8 @@
         pi = piece;
         while(true)
         {
-            pi = changeCoord(pi,0,-1);
-            if(parseInt(pi[1],10)>=1)
+            pi = changeCoord(pi,1,-1);
+            if(parseInt(pi[1],10)>=1 && pi[0].charCodeAt(0)-96<=8)//checked
             {
                 if(gamer[pi]==null)
                     moves.push(pi);
@@ -320,8 +342,8 @@
         pi = piece;
         while(true)
         {
-            pi = changeCoord(pi,1,0);
-            if(pi[0].charCodeAt(0)-96<=8)
+            pi = changeCoord(pi,-1,1);
+            if(pi[0].charCodeAt(0)-96>=1 && parseInt(pi[1],10)<=8)//checked
             {
                 if(gamer[pi]==null)
                     moves.push(pi);
@@ -340,8 +362,8 @@
         pi = piece;
         while(true)
         {
-            pi = changeCoord(pi,-1,0);
-            if(pi[0].charCodeAt(0)-96>=1)
+            pi = changeCoord(pi,-1,-1);
+            if(pi[0].charCodeAt(0)-96>=1 && parseInt(pi[1],10)>=1)
             {
                 if(gamer[pi]==null)
                     moves.push(pi);
