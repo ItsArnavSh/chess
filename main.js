@@ -94,11 +94,11 @@
             attack[turn]=[];
             turn=!turn;
             console.log(turn);
-            if((parseInt(key[1],10)==8&&gamer[key].team==1))
+            if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
             {
                 gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
             }
-            if((parseInt(key[1],10)==1)&&gamer[key].team==0)
+            if((gamer[key].type==5&&parseInt(key[1],10)==1)&&gamer[key].team==0)
                 gamer[key]=new Creator(1,0,"pieces/queen-b.svg");
             k=[];
             display();
