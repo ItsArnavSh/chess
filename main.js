@@ -79,8 +79,10 @@
             {
                 if(gamer[key].type==0)
             {
-                console.log("won");
-                //Display I won
+                if(gamer[key].team)
+                window.location.replace('victory_b.html');
+                else
+                window.location.replace('victory_w.html');
             }
                 const ke = document.querySelector(`#${key}`);
                 let img = ke.querySelector('img');

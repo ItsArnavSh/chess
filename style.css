@@ -43,3 +43,15 @@ header
 {
     background-color: #779954;
 }
+.won
+{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    color:white;
+    font-size:3rem;
+}
+    #pa {
+        text-decoration: none; /* Removes underline */
+        color: #ffffff; /* Changes color to red */
+    }
