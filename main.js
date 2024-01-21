@@ -53,8 +53,10 @@ document.addEventListener("DOMContentLoaded",()=>{
             chosen = key;
         if(gamer[key].team==turn)
             {
+                //Aha, the earliest instance of moves, where key contains the index
+                //Perfect
                 k = moves(key);
-
+                checkOccupied(key,k);
                 for(let j=0;j<k.length;j++)
                 {
                     let change = document.getElementById(k[j]);
