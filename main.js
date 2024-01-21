@@ -15,16 +15,8 @@ document.addEventListener("DOMContentLoaded",()=>{
             const key = target.getAttribute("id");
             if(k.includes(key)&& chosen!=key)
         {
-            console.log(`Went from ${chosen} to ${key}`);
             if(gamer[key]!=null)
             {
-                if(gamer[key].type==0)
-            {
-                if(gamer[key].team)
-                window.location.replace('victory_b.html');
-                else
-                window.location.replace('victory_w.html');
-            }
                 const ke = document.querySelector(`#${key}`);
                 let img = ke.querySelector('img');
                 ke.removeChild(img);
@@ -34,7 +26,6 @@ document.addEventListener("DOMContentLoaded",()=>{
             gamer[chosen] = null;
 
             turn=!turn;
-            console.log(turn);
             if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
             {
                 gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
@@ -56,7 +47,8 @@ document.addEventListener("DOMContentLoaded",()=>{
                 //Aha, the earliest instance of moves, where key contains the index
                 //Perfect
                 k = moves(key);
-                checkOccupied(key,k);
+                //The object chosen is at key currently and k is all posibble motions
+                k = checkForCheck(k,key);
                 for(let j=0;j<k.length;j++)
                 {
                     let change = document.getElementById(k[j]);
@@ -77,14 +69,40 @@ document.addEventListener("DOMContentLoaded",()=>{
                     change.appendChild(indicator);
                     }
                 }
-
-            }
-        else
-        {
-            console.log("nope");    
-        }
+                //Checking if any move is possible for the other side
+                //turn=!turn;
+                let s=[],t=false;
+                //Every possible move
+                for(let i=8;i>=1;i--)
+                {
+                for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
+                {
+                    let toCheck = (`${String.fromCharCode(j)}${i}`);
+                    if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
+                        s.push(toCheck);
+                }}
+                //s contains every character
+                //Every possible legal move
+                let as=[];
+                for(let asd = 0;asd<s.length;asd++)
+                {
+                    as=checkForCheck(moves(s[asd]),s[asd]);
+                    console.log(as);
+                    if(as.length!=0)
+                    {
+                        t=true;
+                    }   
+                }
+                if(t==false)
+                {
+                    if(turn==1)
+                        window.location.replace('victory_b.html');
+                    else
+                        window.location.replace('victory_w.html');
+                }
+                //turn=!turn;
     }
-        }}
+}}}
 });
 
 
@@ -152,7 +170,6 @@ function initializeBoxes()
     for (let i = 0; i < 8; i++) {
         gamer[String.fromCharCode(97 + i) + '2'] = new Creator(5, 1, "pieces/pawn-w.svg", 24 + i);
     }
-    console.log(gamer);
     }
 function display()
 {
@@ -456,7 +473,6 @@ direction=-1;
 let possible;
 let moves = [];
 possible = `${piece[0]}${parseInt(piece[1],10)+direction}`;
-console.log("Move: "+piece[1]);
 if(!checkOccupied(possible))
 {
     moves.push(possible);
@@ -475,4 +491,51 @@ let right = `${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10
 if(piece[0]!='h'  && checkOccupied(right) && turn!=gamer[right].team)
     moves.push(right);
 return moves;
+}
+function checkForCheck(k,key)
+{
+    let nk=[];
+    //k is the array
+    //key is the positioncheckFor
+    for(let a=0;a<k.length;a++)
+    {
+        let c = false;
+        //We assume the move k[a] has been made
+        //We will revert it back later
+        let temp = gamer[k[a]];
+        gamer[k[a]]=gamer[key];
+        gamer[key]=null;
+
+        //Now, we will see if making that move puts our king in danger
+        turn=!turn;
+        for(let i=8;i>=1;i--)
+        {
+            for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
+            {
+                let toCheck = (`${String.fromCharCode(j)}${i}`);
+                if(gamer[toCheck]!=null&&gamer[toCheck].team==turn)
+                {
+                    let ans = moves(toCheck);
+                    lop:
+                    for(let l = 0;l<ans.length;l++)
+                    {
+                        if(gamer[ans[l]]!=null&&gamer[ans[l]].type===0 && gamer[ans[l]].team!=turn)
+                        {
+                            c=true;
+                            break lop;
+                        }
+                    }
+                }
+            }
+        }
+        if(c==false)
+        {
+            nk.push(k[a]);
+        }
+        //Reverting back
+        turn=!turn;
+        gamer[key] = gamer[k[a]];
+        gamer[k[a]]=temp;
+    }
+    return(nk);
 }
