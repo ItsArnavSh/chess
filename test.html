@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Add styles for chessboard, pieces, and other elements */
+        #chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            width: 400px;
+            height: 400px;
+            border: 2px solid #333;
+        }
+
+        .square {
+            width: 100%;
+            height: 100%;
+            background-color: #eee;
+        }
+
+        .piece {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none; /* Disable text selection during drag */
+        }
+    </style>
+    <title>Draggable Chess Pieces</title>
+</head>
+<body>
+
+<div id="chessboard"></div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chessboard = document.getElementById("chessboard");
+
+        // Create the chessboard
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const square = document.createElement("div");
+                square.className = "square";
+                square.dataset.row = row;
+                square.dataset.col = col;
+                chessboard.appendChild(square);
+            }
+        }
+
+        // Create chess pieces
+        const pieces = [
+            { type: "rook", color: "white" },
+            // Add other pieces...
+        ];
+
+        pieces.forEach(piece => {
+            const pieceElement = document.createElement("div");
+            pieceElement.className = `piece ${piece.type} ${piece.color}`;
+            pieceElement.draggable = true;
+
+            pieceElement.addEventListener("dragstart", dragStart);
+            pieceElement.addEventListener("dragend", dragEnd);
+
+            chessboard.appendChild(pieceElement);
+        });
+
+        function dragStart(event) {
+            event.dataTransfer.setData("text/plain", event.target.dataset.row + "," + event.target.dataset.col);
+        }
+
+        function dragEnd(event) {
+            // Perform any cleanup or additional actions after the drag ends
+        }
+
+        chessboard.addEventListener("dragover", dragOver);
+        chessboard.addEventListener("drop", drop);
+
+        function dragOver(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+
+            const data = event.dataTransfer.getData("text/plain").split(",");
+            const draggedRow = parseInt(data[0]);
+            const draggedCol = parseInt(data[1]);
+
+            const dropTarget = event.target;
+            const dropRow = parseInt(dropTarget.dataset.row);
+            const dropCol = parseInt(dropTarget.dataset.col);
+
+            // Check if the drop is allowed (you need to implement your own logic)
+            if (isMoveValid(draggedRow, draggedCol, dropRow, dropCol)) {
+                // Perform the move (you need to implement your own logic)
+                movePiece(draggedRow, draggedCol, dropRow, dropCol);
+
+                // Optionally, perform additional actions after a successful drop
+            }
+        }
+
+        function isMoveValid(draggedRow, draggedCol, dropRow, dropCol) {
+            // Implement your own logic to check if the move is valid
+            // For example, check the rules of chess for the specific piece type
+            return true;
+        }
+
+        function movePiece(draggedRow, draggedCol, dropRow, dropCol) {
+            // Implement your own logic to update the board and move the piece
+            // You may need to update the positions of the pieces in your internal data structure
+        }
+    });
+</script>
+
+</body>
+</html>

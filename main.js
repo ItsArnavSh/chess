@@ -179,7 +179,7 @@ function display()
     {
         const img = document.createElement("img");
         img.src = gamer[keys[i].id].img;
-        img.height = 55;
+        img.height = 43;
         img.style.backgroundColor = 'transparent';
         img.style.pointerEvents = 'none';
         keys[i].appendChild(img);
