@@ -170,7 +170,6 @@ if(gamer[piece].move==0)
 {
     if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)].move==0)
     {
-        if(!checkForCheck())
         moves.push(changeCoord(piece,2,0));
     }
     if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)].move==0)
