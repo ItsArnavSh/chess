@@ -9,100 +9,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     //Now The Actual Game
     for(let i = 0;i<keys.length;i++)
     {
-        keys[i].onclick = ({target})=>{
-            //whenever a key is pressed
-            clear();
-            const key = target.getAttribute("id");
-            if(k.includes(key)&& chosen!=key)
-        {
-            if(gamer[key]!=null)
-            {
-                const ke = document.querySelector(`#${key}`);
-                let img = ke.querySelector('img');
-                ke.removeChild(img);
-            }
-            
-            gamer[key] = gamer[chosen];
-            gamer[chosen] = null;
-
-            turn=!turn;
-            if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
-            {
-                gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
-            }
-            if((gamer[key].type==5&&parseInt(key[1],10)==1)&&gamer[key].team==0)
-                gamer[key]=new Creator(1,0,"pieces/queen-b.svg");
-            k=[];
-            display();
-        }
-        else
-        {
-            k = [];
-        }
-        if(gamer[key]!=null)
-        {
-            chosen = key;
-        if(gamer[key].team==turn)
-            {
-                //Aha, the earliest instance of moves, where key contains the index
-                //Perfect
-                k = moves(key);
-                //The object chosen is at key currently and k is all posibble motions
-                k = checkForCheck(k,key);
-                for(let j=0;j<k.length;j++)
-                {
-                    let change = document.getElementById(k[j]);
-                    if(checkOccupied(k[j]))
-                    {
-                        change.style.border = '2px solid red';
-                        change.classList.add("red");
-                    }
-                    else
-                    {
-                    let indicator = document.createElement("img");
-                    indicator.src = "pieces/blackDot.png";
-                    indicator.height=20;
-                    indicator.classList.add("temp");
-                    indicator.style.backgroundColor = 'transparent';
-                    indicator.style.pointerEvents = 'none';
-                    indicator.style.opacity = '0.5';
-                    change.appendChild(indicator);
-                    }
-                }
-                //Checking if any move is possible for the other side
-                //turn=!turn;
-                let s=[],t=false;
-                //Every possible move
-                for(let i=8;i>=1;i--)
-                {
-                for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
-                {
-                    let toCheck = (`${String.fromCharCode(j)}${i}`);
-                    if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
-                        s.push(toCheck);
-                }}
-                //s contains every character
-                //Every possible legal move
-                let as=[];
-                for(let asd = 0;asd<s.length;asd++)
-                {
-                    as=checkForCheck(moves(s[asd]),s[asd]);
-                    console.log(as);
-                    if(as.length!=0)
-                    {
-                        t=true;
-                    }   
-                }
-                if(t==false)
-                {
-                    if(turn==1)
-                        window.location.replace('victory_b.html');
-                    else
-                        window.location.replace('victory_w.html');
-                }
-                //turn=!turn;
-    }
-}}}
+        keys[i].onclick = ({target})=>{run(target);}}
 });
 
 
@@ -135,6 +42,7 @@ function Creator(type,team,image,sno)
         this.img = image
         this.alive = 1;
         this.sno = sno;
+        this.move = 0;
         //team 0 for black,1 for white
         //id = index no of the piece, like there are 8 pawns, so which one?
     }
@@ -256,6 +164,20 @@ for(var i = 0;i<checkThese.length;i++)
                 moves.push(pi);
             }
     }
+}
+//Checking if castle is possible
+if(gamer[piece].move==0)
+{
+    if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)].move==0)
+    {
+        if(!checkForCheck())
+        moves.push(changeCoord(piece,2,0));
+    }
+    if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)].move==0)
+    {
+        moves.push(changeCoord(piece,-2,0));
+    }
+
 }
 
 return moves;
@@ -495,7 +417,7 @@ return moves;
 function checkForCheck(k,key)
 {
     let nk=[];
-    //k is the array
+    //k is the array of moves
     //key is the positioncheckFor
     for(let a=0;a<k.length;a++)
     {
@@ -538,4 +460,114 @@ function checkForCheck(k,key)
         gamer[k[a]]=temp;
     }
     return(nk);
+}
+function run(target )
+{
+    //whenever a key is pressed
+    clear();
+    const key = target.getAttribute("id");
+    if(k.includes(key)&& chosen!=key)
+{
+    if(gamer[key]!=null)
+    {
+        const ke = document.querySelector(`#${key}`);
+        let img = ke.querySelector('img');
+        ke.removeChild(img);
+    }
+    
+    gamer[key] = gamer[chosen];
+    gamer[chosen] = null;
+    gamer[key].move++;
+    turn=!turn;
+    if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
+    {
+        gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
+    }
+    if((gamer[key].type==5&&parseInt(key[1],10)==1)&&gamer[key].team==0)
+        gamer[key]=new Creator(1,0,"pieces/queen-b.svg");
+    k=[];
+    //castle
+    if(gamer[key].type==0 && gamer[key].move==1 && (key[0]=='g' ||key[0]=='c'))
+    {
+        if(key[0]=='g')//kingside
+        {
+            gamer[`f${key[1]}`]=gamer[`h${key[1]}`]
+            gamer[`h${key[1]}`]=null;
+        }
+        else//queenside
+        {
+            gamer[`d${key[1]}`]=gamer[`a${key[1]}`]
+            gamer[`a${key[1]}`]=null;
+        }
+    }
+    display();
+}
+else
+{
+    k = [];
+}
+if(gamer[key]!=null)
+{
+    chosen = key;
+if(gamer[key].team==turn)
+    {
+        //Aha, the earliest instance of moves, where key contains the index
+        //Perfect
+        k = moves(key);
+        //The object chosen is at key currently and k is all posibble motions
+        k = checkForCheck(k,key);
+        for(let j=0;j<k.length;j++)
+        {
+            let change = document.getElementById(k[j]);
+            if(checkOccupied(k[j]))
+            {
+                change.style.border = '2px solid red';
+                change.classList.add("red");
+            }
+            else
+            {
+            let indicator = document.createElement("img");
+            indicator.src = "pieces/blackDot.png";
+            indicator.height=20;
+            indicator.classList.add("temp");
+            indicator.style.backgroundColor = 'transparent';
+            indicator.style.pointerEvents = 'none';
+            indicator.style.opacity = '0.5';
+            change.appendChild(indicator);
+            }
+        }
+        //Checking if any move is possible for the other side
+        //turn=!turn;
+        let s=[],t=false;
+        //Every possible move
+        for(let i=8;i>=1;i--)
+        {
+        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
+        {
+            let toCheck = (`${String.fromCharCode(j)}${i}`);
+            if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
+                s.push(toCheck);
+        }}
+        //s contains every character
+        //Every possible legal move
+        let as=[];
+        for(let asd = 0;asd<s.length;asd++)
+        {
+            as=checkForCheck(moves(s[asd]),s[asd]);
+            if(as.length!=0)
+            {
+                t=true;
+            }   
+        }
+        
+        if(t==false)
+        {
+            if(turn==1)
+                window.location.replace('victory_b.html');
+            else
+                window.location.replace('victory_w.html');
+        }
+        //turn=!turn;
+}
+}
 }
