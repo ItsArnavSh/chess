@@ -1,15 +1,11 @@
 //setting the global variables
 let turn=1//1 means white and 0 means black
-let gamer = makeBoxes(),k=[],chosen=null;
-const keys = document.querySelectorAll(".box");//To select all the boxes
+let gamer,k=[],chosen=null;
+let keys;//To select all the boxes
 //This function will trigger when DOM is loaded
 document.addEventListener("DOMContentLoaded",()=>{
-    initializeBoxes();
-    display();
-    //Now The Actual Game
-    for(let i = 0;i<keys.length;i++)
-    {
-        keys[i].onclick = ({target})=>{run(target);}}
+    makeBoxes();
+    hello();
 });
 
 
@@ -473,7 +469,10 @@ function run(target )
         let img = ke.querySelector('img');
         ke.removeChild(img);
     }
-    
+    if(gamer[key]==null)
+        playMoveSound();
+    else
+        playCaptureSound();
     gamer[key] = gamer[chosen];
     gamer[chosen] = null;
     gamer[key].move++;
@@ -531,7 +530,13 @@ if(gamer[key].team==turn)
             indicator.classList.add("temp");
             indicator.style.backgroundColor = 'transparent';
             indicator.style.pointerEvents = 'none';
-            indicator.style.opacity = '0.5';
+            if((k[j].charCodeAt(0)+parseInt(k[j][1],10))%2==0)
+            {
+                indicator.style.filter = 'brightness(500%)';
+                indicator.style.opacity = '0.2';
+            }
+            //piece.charCodeAt(0)+x)}${parseInt(piece[1],10)+y
+            indicator.style.opacity = '0.2';
             change.appendChild(indicator);
             }
         }
@@ -562,11 +567,69 @@ if(gamer[key].team==turn)
         if(t==false)
         {
             if(turn==1)
-                window.location.replace('victory_b.html');
+                whoWin("Black");
             else
-                window.location.replace('victory_w.html');
+                whoWin("White");
         }
         //turn=!turn;
 }
 }
+}
+function hello() {
+    //This will start the game
+    const board = document.getElementById("board");
+
+    const play = document.createElement("button");
+    play.classList.add("Play");
+    play.textContent = "Play";
+    board.appendChild(play);
+
+    const about = document.createElement("button"); // Create a new button
+    about.classList.add("About"); // Add the class "About" to the button
+    about.textContent = "About"; // Set the button's text to "About"
+    about.addEventListener('click', () => {
+        window.location.href = 'https://itsarnavsh.github.io/'; // Redirect to the specified URL
+    });
+    board.appendChild(about); // Append the button to the board
+
+    const startGame = () => {
+        console.log("Hello");
+        board.innerHTML = ''; // Clear the board
+        game();
+        board.removeEventListener('click', startGame); // Remove the event listener
+    };
+    play.addEventListener('click', startGame); // Add event listener to the "Play" button
+}
+function game()
+{
+    gamer=makeBoxes();
+    keys = document.querySelectorAll(".box");
+    initializeBoxes();
+    display();
+    //Now The Actual Game
+    for(let i = 0;i<keys.length;i++)
+    {
+        keys[i].onclick = ({target})=>{run(target);}}
+}
+function playMoveSound() {
+    const audio = new Audio('pieces/move.mp3'); // Create a new Audio object
+    audio.play(); // Play the audio file
+}
+function playCaptureSound() {
+    const audio = new Audio('pieces/capture.mp3'); // Create a new Audio object
+    audio.play(); // Play the audio file
+}
+function whoWin(team)
+{
+    const board = document.getElementById("board");
+    board.innerHTML = ''; // Clear the board
+    makeBoxes();
+    const winner = document.createElement("h1");
+    winner.classList.add("victoryScreen");
+    winner.textContent = `${team} Won`;
+    board.appendChild(winner);
+    const again = document.createElement("button");
+    again.classList.add("About");
+    again.textContent = "Play Again";
+    board.appendChild(again);
 }

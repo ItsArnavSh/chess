@@ -17,6 +17,7 @@ header h1 {
     color: #E9EDCC;
     padding: 0;
     border-bottom: black solid 10px;
+    font-family: 'Silkscreen', sans-serif;
 }
 
 #board {
@@ -27,19 +28,25 @@ header h1 {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    border: solid black 4px;
+    border: solid black 20px;
+    background: url('pieces/title.gif') center no-repeat fixed;
+    background-position: center;
+    background-size: 45%; /* Scale the image to the largest size such that both its width and its height can fit inside the content area */
 }
 
 .box {
     border: solid black 1px;
+    z-index:1;
 }
 
 .even {
     background-color: #E9EDCC;
+    transition-duration: 50ms;
 }
 
 .odd {
     background-color: #779954;
+    transition-duration: 50ms;
 }
 
 .won {
@@ -60,4 +67,58 @@ header h1 {
     #board {
         max-width: 100%; /* Allow the board to take up the full width on smaller screens */
     }
+}
+.odd:hover
+{
+    background-color: #a6bd82;
+}
+.even:hover
+{
+    background-color: #f3eec6;
+}
+.Play
+{
+    font-family: 'Titan One', sans-serif;
+     text-shadow: 2px 2px #000000;
+    font-size: 2.5rem;
+    color:#E9EDCC;
+    background-color: #779954;
+    grid-column: 1/9;
+    grid-row:3/4;
+    transition-duration: 500ms;
+    z-index:2;
+
+}
+.victoryScreen
+{
+    font-family: 'Silkscreen', sans-serif;
+    text-shadow: 2px 2px #000000;
+    font-size: 2.5rem;
+    color:#E9EDCC;
+    background-color: #779954;
+    grid-column: 1/9;
+    grid-row:3/4;
+    transition-duration: 500ms;
+    text-align: center; /* Center the text */
+}
+.About
+{
+    font-family: 'Titan One', sans-serif;
+    text-shadow: 2px 2px #000000;
+    font-size: 2.5rem;
+    color:#E9EDCC;
+    background-color: #779954;
+    grid-column: 1/9;
+    grid-row:6/7;
+    transition-duration: 500ms;
+    z-index:2;
+
+}
+.Play:hover
+{
+    background-color: #a6bd82;
+}
+.About:hover
+{
+    background-color: #a6bd82;
 }
