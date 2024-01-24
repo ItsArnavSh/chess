@@ -23,15 +23,12 @@ header h1 {
 #board {
     margin-top: 20px;
     width: 100%; /* Make the board take up the full width of the container */
-    max-width: 500px; /* Set a maximum width for larger screens */
+    max-width:500px;
     aspect-ratio: 1; /* Maintain a 1:1 aspect ratio for the board */
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     border: solid black 20px;
-    background: url('pieces/title.gif') center no-repeat fixed;
-    background-position: center;
-    background-size: 45%; /* Scale the image to the largest size such that both its width and its height can fit inside the content area */
 }
 
 .box {

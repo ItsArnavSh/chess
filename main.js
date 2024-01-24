@@ -1,6 +1,7 @@
 //setting the global variables
 let turn=1//1 means white and 0 means black
 let gamer,k=[],chosen=null;
+let kpw,kpb;//king positions
 let keys;//To select all the boxes
 //This function will trigger when DOM is loaded
 document.addEventListener("DOMContentLoaded",()=>{
@@ -55,6 +56,7 @@ function initializeBoxes()
     gamer.c8 = new Creator(4, 0, "pieces/bishop-b.svg", 2);
     gamer.d8 = new Creator(1, 0, "pieces/queen-b.svg", 3);
     gamer.e8 = new Creator(0, 0, "pieces/king-b.svg", 4);
+    kpb = 'e8';
     gamer.f8 = new Creator(4, 0, "pieces/bishop-b.svg", 5);
     gamer.g8 = new Creator(3, 0, "pieces/knight-b.svg", 6);
     gamer.h8 = new Creator(2, 0, "pieces/rook-b.svg", 7);
@@ -68,6 +70,7 @@ function initializeBoxes()
     gamer.c1 = new Creator(4, 1, "pieces/bishop-w.svg", 18);
     gamer.d1 = new Creator(1, 1, "pieces/queen-w.svg", 19);
     gamer.e1 = new Creator(0, 1, "pieces/king-w.svg", 20);
+    kpw = 'e1';
     gamer.f1 = new Creator(4, 1, "pieces/bishop-w.svg", 21);
     gamer.g1 = new Creator(3, 1, "pieces/knight-w.svg", 22);
     gamer.h1 = new Creator(2, 1, "pieces/rook-w.svg", 23);
@@ -480,7 +483,15 @@ function run(target )
     gamer[key] = gamer[chosen];
     gamer[chosen] = null;
     gamer[key].move++;
+    if(gamer[key].type==0)
+    {
+        if(turn==1)
+            kpw=key;
+        else
+            kpb=key;
+    }
     turn=!turn;
+    checkforMate();
     if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
     {
         gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
@@ -543,39 +554,9 @@ if(gamer[key].team==turn)
             indicator.style.opacity = '0.2';
             change.appendChild(indicator);
             }
-        }
-        //Checking if any move is possible for the other side
-        //turn=!turn;
-        let s=[],t=false;
-        //Every possible move
-        for(let i=8;i>=1;i--)
-        {
-        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
-        {
-            let toCheck = (`${String.fromCharCode(j)}${i}`);
-            if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
-                s.push(toCheck);
-        }}
-        //s contains every character
-        //Every possible legal move
-        let as=[];
-        for(let asd = 0;asd<s.length;asd++)
-        {
-            as=checkForCheck(moves(s[asd]),s[asd]);
-            if(as.length!=0)
-            {
-                t=true;
-            }   
+            
         }
         
-        if(t==false)
-        {
-            if(turn==1)
-                whoWin("Black");
-            else
-                whoWin("White");
-        }
-        //turn=!turn;
 }
 }
 }
@@ -639,4 +620,39 @@ function whoWin(team)
         window.location.href = 'https://itsarnavsh.github.io/chess'; // Technically Refresh
     });
     board.appendChild(again);
+}
+function checkforMate()
+{
+    //Checking if any move is possible for the other side
+        //turn=!turn;
+        let s=[],t=false;
+        //Every possible move
+        for(let i=8;i>=1;i--)
+        {
+        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
+        {
+            let toCheck = (`${String.fromCharCode(j)}${i}`);
+            if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
+                s.push(toCheck);
+        }}
+        //s contains every character
+        //Every possible legal move
+        let as=[];
+        for(let asd = 0;asd<s.length;asd++)
+        {
+            as=checkForCheck(moves(s[asd]),s[asd]);
+            if(as.length!=0)
+            {
+                t=true;
+            }   
+        }
+        
+        if(t==false)
+        {
+            if(turn==1)
+                whoWin("Black");
+            else
+                whoWin("White");
+        }
+        //turn=!turn;
 }
