@@ -1,5 +1,7 @@
 //setting the global variables
 let turn=1//1 means white and 0 means black
+let moveno=0;
+let gameState=[];
 let gamer,k=[],chosen=null;
 let kpw,kpb;//king positions
 let keys;//To select all the boxes
@@ -168,13 +170,13 @@ for(var i = 0;i<checkThese.length;i++)
 if(gamer[piece].move==0)
 {
     let c1 = [changeCoord(piece,1,0),changeCoord(piece,2,0)]
-    if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)].move==0)
+    if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)]!=null && gamer[changeCoord(piece,3,0)].move==0)
     {
         if(checkForCheck(c1,piece).length==2)
             moves.push(changeCoord(piece,2,0));
     }
     c1 = [changeCoord(piece,-1,0),changeCoord(piece,-2,0),changeCoord(piece,-3,0)];
-    if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)].move==0)
+    if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)]!=null && gamer[changeCoord(piece,-4,0)].move==0)
     {
         if(checkForCheck(c1,piece).length==3)
             moves.push(changeCoord(piece,-2,0));
@@ -491,6 +493,7 @@ function run(target )
             kpb=key;
     }
     turn=!turn;
+    fenmaker();
     checkforMate();
     if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
     {
@@ -659,4 +662,70 @@ function checkforMate()
                 whoWin("White");
         }
         //turn=!turn;
+}
+function fenmaker()
+{
+    let fen = '',counter=0;
+    let assigner = ['k','q','r','n','b','p','K','Q','R','N','B','P'];//The values assigned
+    for(let i=8;i>=1;i--)//top to bottom
+    {
+        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)//left to right
+        {
+            let box = (`${String.fromCharCode(j)}${i}`);
+            if(gamer[box]!=null)
+            {
+                if(counter!=0)
+                {
+                    fen=fen+counter;
+                    counter=0;
+                }
+            let index = gamer[box].type+gamer[box].team*6;
+            fen=fen+assigner[index];
+            }
+            else if(String.fromCharCode(j)=='h')
+            {
+                counter++;
+                fen+=counter;
+                counter=0;
+            }
+            else
+                counter++;
+        }
+        if(i!=1)
+            fen+='/';
+    }
+    //First part done
+    if(turn==1)
+    fen+=' w ';
+    else
+    fen+=' b ';
+    //Seconds part also done
+    //For the third section, castling rights
+    //KQkq
+    if(gamer['e1']!=null && gamer['e1'].move==0)
+    {
+         //For the white kingside
+         if(gamer['h1']!=null&&gamer['h1'].move==0)
+            fen+='K';
+         //For the white queenside
+         if(gamer['a1']!=null&&gamer['a1'].move==0)
+            fen+='Q';
+    }
+
+    if(gamer['e8']!=null&&gamer['e8'].move==0)
+    {
+         //For the black kingside
+         if(gamer['h8']!=null&&gamer['h8'].move==0)
+            fen+='k';
+         //For the black queenside
+         if(gamer['a8']!=null&&gamer['a8'].move==0)
+            fen+='q';
+    }
+    //The fourth part
+    fen+=' - 0 ';
+    moveno+=turn;
+    fen+=moveno;
+    console.log(fen);
+    gameState.push(fen);
+    return(fen);
 }
