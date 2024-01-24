@@ -646,7 +646,6 @@ function checkforMate()
                 t=true;
             }   
         }
-        
         if(t==false)
         {
             if(turn==1)
