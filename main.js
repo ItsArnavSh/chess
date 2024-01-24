@@ -164,13 +164,17 @@ for(var i = 0;i<checkThese.length;i++)
 //Checking if castle is possible
 if(gamer[piece].move==0)
 {
+    let c1 = [changeCoord(piece,1,0),changeCoord(piece,2,0)]
     if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)].move==0)
     {
-        moves.push(changeCoord(piece,2,0));
+        if(checkForCheck(c1,piece).length==2)
+            moves.push(changeCoord(piece,2,0));
     }
+    c1 = [changeCoord(piece,-1,0),changeCoord(piece,-2,0),changeCoord(piece,-3,0)];
     if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)].move==0)
     {
-        moves.push(changeCoord(piece,-2,0));
+        if(checkForCheck(c1,piece).length==3)
+            moves.push(changeCoord(piece,-2,0));
     }
 
 }
@@ -632,7 +636,7 @@ function whoWin(team)
     again.classList.add("About");
     again.textContent = "Play Again";
     again.addEventListener('click', () => {
-        window.location.href = 'https://itsarnavsh.github.io/chess'; // Redirect to the specified URL
+        window.location.href = 'https://itsarnavsh.github.io/chess'; // Technically Refresh
     });
     board.appendChild(again);
 }
