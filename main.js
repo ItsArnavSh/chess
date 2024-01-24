@@ -617,7 +617,12 @@ function whoWin(team)
     again.classList.add("About");
     again.textContent = "Play Again";
     again.addEventListener('click', () => {
-        window.location.href = 'https://itsarnavsh.github.io/chess'; // Technically Refresh
+        turn=1;
+        gamer=null;
+        chosen=null;
+        board.innerHTML = '';
+        makeBoxes();
+        hello(); // Technically Refresh
     });
     board.appendChild(again);
 }
