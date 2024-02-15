@@ -1,14 +1,11 @@
 "use strict";
-let turn=1;
-let gamer;
-let gamePlay;
-let prev,prevMove;
 document.addEventListener("DOMContentLoaded",()=>{
     //This function is called when the DOM is loaded
     makeBoxes();
-    [gamer,gamePlay]=setPieces();
+    let boardState = initializeChessPieces();
     display(gamer);
     let keys = document.querySelectorAll(".box");
+    let currentTurn = 1;
     for(let i = 0;i<keys.length;i++)
     {
         keys[i].onclick = ({target})=>{clicked(target);}
@@ -27,7 +24,6 @@ For Reference
 57 58 59 60 61 62 63 64
 */
 ////////////////////////////////////////
-
 function numberToMap(n) {
     //This function will take a number, and return 1, shifted by that number. 
     //eg 3 returns 100
@@ -46,9 +42,14 @@ function numberToMap(n) {
         throw new Error('Invalid argument type, expected letter or array');
     }
 }
-function setPieces()//This will initialize all the pieces
+function initializeChessPieces()//This will initialize all the pieces
 {
     let gamer=[];
+    gamer.push(numberToMap([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])); // All black pieces
+    gamer.push(numberToMap([49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64])); // All white pieces
+    //For gamestate
+    gamer.push(numberToMap([1,2,3,4,]));
+    gamer.push(numberToMap(0));//No enpassant sqares at the start of the game
     /*
     0-5 Black's pieces
     0-king
@@ -65,27 +66,21 @@ function setPieces()//This will initialize all the pieces
     gamer.push(numberToMap([1, 8])); // Black rooks
     gamer.push(numberToMap([2, 7])); // Black knights
     gamer.push(numberToMap([3, 6])); // Black bishops
-    gamer.push(numberToMap([9, 10, 11, 12, 13, 14, 15, 46])); // Black pawns
+    gamer.push(numberToMap([9, 10, 11, 12, 13, 14, 15, 16])); // Black pawns
 
     // White pieces
-    gamer.push(numberToMap(33)); // White king
-    gamer.push(numberToMap(34)); // White queen
-    gamer.push(numberToMap([29, 64])); // White rooks
-    gamer.push(numberToMap([57, 63])); // White knights
-    gamer.push(numberToMap([28, 62])); // White bishops
+    gamer.push(numberToMap(61)); // White king
+    gamer.push(numberToMap(60)); // White queen
+    gamer.push(numberToMap([57, 64])); // White rooks
+    gamer.push(numberToMap([58, 63])); // White knights
+    gamer.push(numberToMap([59, 62])); // White bishops
     gamer.push(numberToMap([49, 50, 51, 52, 53, 54, 55, 56])); // White pawns
     /*
       0 and 1 all black and white pieces
       2- GameState TKQkqE T turn, KQkq means castle in FEN terms and E means en passant avaibility
       3- Available En passant square, if not available, it is 0
     */
-    let gamer2=[];
-    gamer2.push(numberToMap([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 46])); // All black pieces
-    gamer2.push(numberToMap([49, 50, 51, 52, 53, 54, 55, 56, 29, 57, 28, 34, 33, 62, 63, 64])); // All white pieces
-    //For gamestate
-    gamer2.push(numberToMap([1,2,3,4,5]));
-    gamer2.push(numberToMap(0));//No enpassant sqares at the start of the game
-    return [gamer,gamer2];
+    return gamer;
 }
 function mapToNumber(bitmap)
 {
@@ -151,6 +146,35 @@ function makeBoxes()
     }
 };
 function display(gamer) {
+    let [black,white]=evaluation(gamer);
+    let wpercent = Math.round(white*1000/(white+black));
+    let bpercent = 1000-wpercent;
+    const find = document.getElementById("eval")
+    const find2 = document.getElementById("eval2")
+    find.innerHTML="";
+    find2.innerHTML="";
+        while(bpercent!=0)
+        {
+            const b = document.createElement("div");
+            b.classList.add("eblack");
+            find.appendChild(b);
+            const c = document.createElement("div");
+            c.classList.add("eblack");
+            find.appendChild(b);
+            find2.appendChild(c);
+            bpercent--;
+        }
+        while(wpercent!=0)
+        {
+            const b = document.createElement("div");
+            b.classList.add("ewhite");
+            find.appendChild(b);
+            const c = document.createElement("div");
+            c.classList.add("ewhite");
+            find.appendChild(b);
+            find2.appendChild(c);
+            wpercent--;
+        }
     // The display will refresh every single move
     for(let i=1;i<=64;i++)
     {
@@ -161,7 +185,7 @@ function display(gamer) {
     let keys;
     
     const pieceNames = ["king-b", "queen-b", "rook-b", "knight-b", "bishop-b", "pawn-b", "king-w", "queen-w", "rook-w", "knight-w", "bishop-w", "pawn-w"];
-    const pieceCounts = [1, 1, 2, 2, 2, 8, 1, 1, 2, 2, 2, 8];
+    const pieceCounts = [1, 9, 2, 2, 2, 8, 1, 9, 2, 2, 2, 8];
 
     for (let i = 0; i < pieceNames.length; i++) {
         let coords = mapToString(gamer[i]);
@@ -170,8 +194,7 @@ function display(gamer) {
             keys = document.getElementById(coord);
             if(keys!=null)
             {
-                const img = document.createElement("img");
-                img.src = `pieces/${pieceNames[i]}.svg`;
+                const img = document.createElement("img");                img.src = `pieces/${pieceNames[i]}.svg`;
                 img.height = 43;
                 img.style.backgroundColor = 'transparent';
                 img.style.pointerEvents = 'none';
@@ -187,14 +210,14 @@ function clicked(target)
     const clickedBitMap = numberToMap(coordToNum(key));
     if((clickedBitMap&gamePlay[turn]))
     {
-        let moves = (mapToString(whichPieceIsInvoked(clickedBitMap)));
+        let moves = (mapToString(whichPieceIsInvoked(turn,clickedBitMap)[0]));
         for(let j=0;j<moves.length;j++)
         {
             let change = document.getElementById(moves[j]);
             if(numberToMap(coordToNum(moves[j]))&gamePlay[turn == 1n ? 0 : 1])
             {
                 change.style.border = '2px solid red';
-                change.classList.add("red");
+           change.classList.add("red");
             }
             else
             {
@@ -215,7 +238,7 @@ function clicked(target)
             }
         }
         prevMove = clickedBitMap;
-        prev = (whichPieceIsInvoked(clickedBitMap));
+        prev = (whichPieceIsInvoked(turn,clickedBitMap))[0];
     }
     else if(prev!=undefined && (clickedBitMap & prev))
     {
@@ -234,35 +257,34 @@ function clicked(target)
                 gamer[i]|=clickedBitMap;
             }
         }
+        //Checks for promotion
+        promotion(clickedBitMap);
+        //updates en passant square
         display(gamer);
         turn=turn==1?0:1;
-        console.log("Move: ",turn);
         prevMove = undefined;
         prev = undefined;
     }
-    else
-        console.log("Empty Space");
-
 }
-function whichPieceIsInvoked(bitboard)
+function whichPieceIsInvoked(player,bitboard,board = gamer,gamestate = gamePlay)
 {
     //Accepts the bitboard of clicked piece and returns the bitboard with all attacks available
     //First we need to figure out which piece is it
-    let range = turn==1?6:0;
+    let range = player==1?6:0;
     for(let i = range; i < range + 6; i++) {
-        if(gamer[i] & bitboard) {
+        if(BigInt(board[i]) & BigInt(bitboard)) {
             switch(i % 6) {
-                case 0: return king(bitboard);
-                case 1: return queen(bitboard);
-                case 2: return rook(bitboard);
-                case 3: return knight(bitboard);
-                case 4: return bishop(bitboard);
-                case 5: return pawn(bitboard);
+                case 0: return [king(player,bitboard,board = gamer),player*6];
+                case 1: return [queen(player,bitboard),1+player*6];
+                case 2: return [rook(player,bitboard),2+player*6];
+                case 3: return [knight(player,bitboard),3+player*6];
+                case 4: return [bishop(player,bitboard),4+player*6];
+                case 5: return [pawn(player,bitboard),5+player*6];
             }
         }
     }
 }
-function king(bitboard)
+function king(player,bitboard)
 {
     //Watch this
     /*
@@ -280,7 +302,7 @@ function king(bitboard)
      kingCoord&=0b1111111111111111111111111111111111111111111111111111111111111111n;
      //TLA will delete any values over 64 bits
      // eg 101 & 11 is 01, just that but for 64 bits
-     kingCoord&=~gamePlay[turn];
+     kingCoord&=~gamePlay[player];
      //TLA will remove any coordinates that coincide with our own pieces
      //We wont attack them
      //Now there is an issue
@@ -296,12 +318,12 @@ function king(bitboard)
         kingCoord&=0b0011111100111111001111110011111100111111001111110011111100111111n;
     return kingCoord;
 }
-function queen(bitboard)
+function queen(player,bitboard)
 {
     //Queen is just rook and bishop combined
-    return(rook(bitboard)|bishop(bitboard));
+    return(rook(player,bitboard)|bishop(player,bitboard));
 }
-function rook(bitboard)
+function rook(player,bitboard)
 {
     //I will break it down for you guys
     //Bear with me
@@ -315,17 +337,17 @@ function rook(bitboard)
     //11111111n<<64 is larger than ant position
     //So if temp and that mess is not zero, that number gotta be larger than needed
     //Hence that will be beyond the boundary and we break the loop
-    while(!(temp&(1111111n<<64n)))//number is smaller than 64 bits
+    while(!(temp&(11111111n<<64n)))//number is smaller than 64 bits
     {
         //We are working with a board right
         //Each one has a row of 8
         //So we will left shift the coordinate
         //That will take us one step down
         temp=temp<<8n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
         //If we step on our own piece, we quit the scan in that direction
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
         //If we step on their own piece,we add that to the move
         //As we can capture those
@@ -345,9 +367,9 @@ function rook(bitboard)
         //This will make it go zero in some terms
         //Easy, not like that previous mess
         temp=temp>>8n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             rookCoord|=temp;
             break;
@@ -363,9 +385,9 @@ function rook(bitboard)
     while(temp && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
     {
         temp=temp>>1n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             rookCoord|=temp;
             break;
@@ -379,9 +401,9 @@ function rook(bitboard)
     while(!((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
     {
         temp=temp<<1n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             rookCoord|=temp;
             break;
@@ -390,7 +412,7 @@ function rook(bitboard)
     }
     return rookCoord;
 }
-function knight(bitboard) {
+function knight(player,bitboard) {
     //Watch this
     /*
     01010000
@@ -401,18 +423,16 @@ function knight(bitboard) {
     */
     let knightCoord = 0b0101000010001000000000001000100001010000n;
     //We need to shift the knight to the bitboard
-    console.log(typeof(mapToNumber(bitboard)[0]));
     knightCoord=knightCoord<<(BigInt(mapToNumber(bitboard)[0])-22n);
     knightCoord&=0b1111111111111111111111111111111111111111111111111111111111111111n;
-     knightCoord&=~gamePlay[turn];
-     console.log(mapToNumber(knightCoord));
+     knightCoord&=~gamePlay[player];
      if(bitboard & 0b1111000011110000111100001111000011110000111100001111000011110000n)
      knightCoord&=0b1111110011111100111111001111110011111100111111001111110011111100n;
     else
      knightCoord&=0b0011111100111111001111110011111100111111001111110011111100111111n;
     return knightCoord;
 }
-function bishop(bitboard)
+function bishop(player,bitboard)
 {
     let bishopCoord=0b0n;
     //Up Left
@@ -420,9 +440,9 @@ function bishop(bitboard)
     while(temp && !((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
     {
         temp=temp>>9n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             bishopCoord|=temp;
             break;
@@ -434,9 +454,9 @@ function bishop(bitboard)
     while(temp && !((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
     {
         temp=temp>>7n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             bishopCoord|=temp;
             break;
@@ -445,13 +465,12 @@ function bishop(bitboard)
     }
     //Down Left
     temp = bitboard;
-    while((!(temp&(11111111n<<64n))) && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
+    while((!(temp&(11111111n<<64n))) &&temp&& (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
     {
-        console.log(!(temp&(1111111n<<64n))) && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)));
         temp=temp<<7n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             bishopCoord|=temp;
             break;
@@ -460,12 +479,12 @@ function bishop(bitboard)
     }
     //Down right
     temp = bitboard;
-    while((!(temp&(11111111n<<64n))) && (!((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
+    while((!(temp&(1111111n<<64n))) && (!((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
     {
         temp=temp<<9n;
-        if(gamePlay[turn]&temp)
+        if(gamePlay[player]&temp)
             break;
-        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        else if(BigInt(gamePlay[player==1?0:1])&temp)
         {
             bishopCoord|=temp;
             break;
@@ -474,11 +493,48 @@ function bishop(bitboard)
     }
     return bishopCoord;
 }
-function pawn(bitboard)
+function pawn(player,bitboard)
 {
-    //first we check left and right
-    let pawnCoord = 0b0n;
-
+    let pawnCoord=0b0n;
+    if(player==1)
+    {
+        //means we have to go up
+        if(!(BigInt(((gamePlay[player])|(gamePlay[player==0?1:0])))&(bitboard>>8n)))
+        {
+            pawnCoord|=BigInt(bitboard)>>8n;
+            if((!(BigInt(((gamePlay[player])|(gamePlay[player==0?1:0])))&(bitboard>>16n)))&&(bitboard&0b11111111000000000000000000000000000000000000000000000000n))
+            {
+                gamePlay[3]|=BigInt(bitboard)>>8n;
+                pawnCoord|=BigInt(bitboard)>>16n;
+            }
+        }
+        if((gamePlay[player==0?1:0]&(bitboard>>7n))||((BigInt(bitboard)&0b111111110000000000000000n)))
+        {
+            pawnCoord|=BigInt(bitboard)>>7n;
+        }
+        if(gamePlay[player==0?1:0]&(bitboard>>9n))
+        {
+            pawnCoord|=BigInt(bitboard)>>9n;
+        }
+    }
+    else if(player==0)
+    {
+        //means we have to go up
+        if(!(BigInt(((gamePlay[player])|(gamePlay[player==0?1:0])))&(bitboard<<8n)))
+        {
+            pawnCoord|=BigInt(bitboard)<<8n;
+            if((!(BigInt(((gamePlay[player])|(gamePlay[player==0?1:0])))&(bitboard<<16n)))&&(bitboard&0b0000000000000000000000000000000000000000000000001111111100000000n))
+                pawnCoord|=BigInt(bitboard)<<16n;
+        }
+        if(gamePlay[player==0?1:0]&(bitboard<<7n))
+        {
+            pawnCoord|=BigInt(bitboard)<<7n;
+        }
+        if(gamePlay[player==0?1:0]&(bitboard<<9n))
+        {
+            pawnCoord|=BigInt(bitboard)<<9n;
+        }
+    }
     return pawnCoord;
 }
 function shift(bitboard,x,y)
@@ -486,21 +542,6 @@ function shift(bitboard,x,y)
     //This function will return your shifted bitboard by specified x and y
     let shiftval = x+8*(y);
     return(bitboard<<BigInt(shiftval));
-}
-function distanceBetweenStrings(a, b) {
-    console.log(a,b);
-    // Convert the chess coordinates to 0-based indices
-    let x1 = a.charCodeAt(0) - 'a'.charCodeAt(0);
-    let y1 = parseInt(a[1]) - 1;
-    let x2 = b.charCodeAt(0) - 'a'.charCodeAt(0);
-    let y2 = parseInt(b[1]) - 1;
-
-    // Calculate the distances in the x and y axes
-    let dx = Math.abs(x2 - x1);
-    let dy = Math.abs(y2 - y1);
-
-    // Return the larger distance
-    return Math.max(dx, dy);
 }
 function clear() {
     let elements = document.getElementsByClassName('temp');
@@ -512,4 +553,236 @@ function clear() {
     {
         elements[l].style.border = "1px solid black";
     }
+}
+function checkChecker() {
+    let ourKing = gamer[turn*6];
+    // Checking for queen or rook in the way
+    if(rook(ourKing) & gamer[(turn==0?1:0)*6+2]) {
+        return false;
+    }
+
+    // Checking for queen or bishop in the way
+    if(bishop(ourKing) & gamer[(turn==0?1:0)*6+4]) {
+        return false;
+    }
+
+    // Checking for knight in the way
+    if(knight(ourKing) & gamer[(turn==0?1:0)*6+5]) {
+        return false;
+    }
+
+    // Checking for pawn in the way
+    if(pawn(ourKing) & gamer[(turn==0?1:0)*6+5]) {
+        return false;
+    }
+
+    // Checking for king in the way
+    if(king(ourKing) & gamer[(turn==0?1:0)*6]) {
+        return false;
+    }
+}
+function promotion(bitboard)
+{
+    //fist we check if we are dealing with pawns of some sort
+    if((bitboard&gamer[11])&&(bitboard&0b11111111n))//White Pawn
+    {
+        gamer[11]&=~bitboard;
+        gamer[7]|=bitboard;
+    }
+    else  if((bitboard&gamer[5])&&(bitboard&0b1111111100000000000000000000000000000000000000000000000000000000n))//Black Pawn
+    {
+        gamer[5]&=~bitboard;
+        gamer[1]|=bitboard;
+    }
+}
+function evaluation(bits)
+{
+    //Calculating the points
+    let bpoints = 0;
+    bpoints+=9*(countBits(bits[1])); // queens are typically worth 9 points
+    bpoints+=5*(countBits(bits[2])); // rooks are typically worth 5 points
+    bpoints+=3*(countBits(bits[4])); // bishops are typically worth 3 points
+    bpoints+=3*(countBits(bits[3])); // knights are also typically worth 3 points
+    bpoints+=1*(countBits(bits[5])); // pawns are typically worth 1 point
+    
+    // do the same for black pieces
+    let wpoints = 0;
+    wpoints+=9*(countBits(bits[7]));
+    wpoints+=5*(countBits(bits[8]));
+    wpoints+=3*(countBits(bits[9]));
+    wpoints+=3*(countBits(bits[10]));
+    wpoints+=1*(countBits(bits[11]));
+    //Giving points mor weightage
+    wpoints*=8;
+    bpoints*=8;
+    //Marking by locations
+    //King
+    let area = 0b1100001100000000000000000000000000000000000000000000000011000011n;
+    //This is the safe king squares
+    if(gamer[0]&area)
+        bpoints+=4;
+    else if(gamer[6]&area)
+        wpoints+=4;
+    area = 0b0000000000111100001111000000000000000000001111000011110000000000n;
+    if(gamer[0]&area)
+        bpoints-=2;
+    else if(gamer[6]&area)
+        wpoints-=2;
+    area = 0b0000000000000000000000001111111111111111000000000000000000000000n;
+    if(gamer[0]&area)
+        bpoints-=5;
+    else if(gamer[6]&area)
+        wpoints-=5;
+    //Bishops, rooks and queens
+    const wstruct = gamePlay[1]&(~gamer[6]);
+    const bstruct = gamePlay[0]&(~gamer[0]);
+    area = 0b0000000000000000111111110000000000000000111111110000000000000000n;
+    wpoints+=8*countBits(area&wstruct);
+    bpoints+=8*countBits(area&bstruct);
+    area = 0b0000000000000000000000000011110000111100000000000000000000000000n;
+    wpoints+=10*countBits(area&wstruct);
+    bpoints+=10*countBits(area&bstruct);
+    //Marking by area under influence
+    //We will do this for the queen, rooks, knights and bishops only
+    //To make it efficient, we will merge queen with bishop and queen with rooks
+    let bqb = gamer[1]|gamer[4];
+    bqb = bitmapMultiplier(bqb);//Now bqp is an array
+    for(let i=0;i<bqb.length;i++)
+    {
+        console.log(countBits(bishop(0,bqb[i])));
+        bpoints+=2*countBits((bishop(0,bqb[i])));
+    }
+    let bqw = gamer[7]|gamer[10];
+    bqw = bitmapMultiplier(bqw);
+    for(let i=0;i<bqw.length;i++)
+    {
+        wpoints+=2*countBits((bishop(1,bqw[i])));
+    }
+    bqb = gamer[1]|gamer[2];
+    bqb = bitmapMultiplier(bqb);//Now bqp is an array
+    for(let i=0;i<bqb.length;i++)
+    {
+        bpoints+=2*countBits((rook(0,bqb[i])));
+    }
+    bqw = gamer[7]|gamer[8];
+    bqw = bitmapMultiplier(bqw);
+    for(let i=0;i<bqw.length;i++)
+    {
+        wpoints+=2*countBits((rook(1,bqw[i])));
+    }
+    bqb = gamer[3];
+    bqb = bitmapMultiplier(bqb);//Now bqp is an array
+    for(let i=0;i<bqb.length;i++)
+    {
+        bpoints+=2*countBits((knight(0,bqb[i])));
+    }
+    bqw = gamer[9];
+    bqw = bitmapMultiplier(bqw);
+    for(let i=0;i<bqw.length;i++)
+    {
+        wpoints+=2*countBits((knight(1,bqw[i])));
+    }
+
+
+    console.log([bpoints,wpoints])
+
+    return [bpoints,wpoints];
+}
+function countBits(bitboard) {
+    let count = 0;
+    while (bitboard) {
+        bitboard &= bitboard - 1n; // Clear the least significant bit set
+        count++;
+    }
+    return count;
+}
+function computer(board,depth,alpha,beta,player)
+{
+    if(depth==0)
+    {
+        let e = evaluation(board);
+        return(e[1]-e[0]);
+    }
+    if(player)
+    {
+        let maxEval = -9999999999;
+        let k = allPossibleTurns(board,player)
+        for(let i=0;i<k.length;i++)
+        {
+            let evalue = computer(k[i],depth-1,alpha,beta,0);
+            maxEval = Math.max(maxEval,evalue);
+            alpha = Math.max(alpha,evalue);
+            if (beta <=alpha)
+                break;
+        }
+        return maxEval;
+    }
+    else
+    {
+        let minEval = 9999999999;
+        let k = allPossibleTurns(board,player)
+        for(let i=0;i<k.length;i++)
+        {
+            let evalue = computer(k[i],depth-1,alpha,beta,1);
+            minEval = Math.min(minEval,evalue);
+            beta = Math.min(beta,evalue);
+            if(beta<=alpha)
+                break;
+        }
+        return minEval;
+    }
+}
+//we need a function, which on sending a gameboard and turn will return an array of all the legal possible moves
+function allPossibleTurns(board, player)
+{
+    if(board==undefined)
+        return;
+    let moves = [];
+    //We have a board and whose turn it is
+    //Our task is to find all the possible moves that can be played at that moment
+    for(let i=0;i<6;i++)
+    {
+        let blis = bitmapMultiplier(board[i+6*player])
+        if(blis!=undefined){
+        for(let j=0;j<blis.length;j++)
+        {
+            let ans = whichPieceIsInvoked(player,blis[j]);
+            let these = bitmapMultiplier(ans[0]);
+            console.log(i);
+            for(let k=0;k<these.length;k++)
+            {
+                let a = BigInt(board[ans[1]])&(~blis[j]);
+                a|=these[k];
+                let temp = ans[1];
+                board[ans[1]]=a;
+                moves=moves.concat([board]);
+                board[ans[1]] = temp;
+            }
+        }
+    }
+    }
+    return moves;
+}
+//Make a map multiplier
+function bitmapMultiplier(bitmap)
+{
+    if(bitmap==undefined)
+        return;
+    let bitmaps = [];
+    for(let i=0;i<=63;i++)
+    {
+        let current = 1n<<BigInt(i);
+        if(current&bitmap)
+        {
+        bitmaps.push(current);
+    }
+    }
+    return bitmaps;
+}
+//Lets implement checking in some way
+function checking(moves,player)
+{
+    //This accepts the moves, then removes the moves that lead to check
+    let allmoves = bitmapMultiplier(moves);
+    
 }

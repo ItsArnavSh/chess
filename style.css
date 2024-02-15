@@ -21,17 +21,21 @@ header h1 {
 }
 
 #board {
-    margin-top: 20px;
+    
     width: 100%; /* Make the board take up the full width of the container */
     max-width:500px;
     aspect-ratio: 1; /* Maintain a 1:1 aspect ratio for the board */
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    border: solid black 20px;
+    border: solid black 15px;
+    border-left: none;
+    border-right:none;
+    border-bottom-color:#f0f0ed;;
 }
-
 .box {
+    height:55px;
+    width:55px;
     border: solid black 1px;
     z-index:1;
 }
@@ -118,4 +122,40 @@ header h1 {
 .About:hover
 {
     background-color: #a6bd82;
+}
+#playArea
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+#eval 
+{
+    border: solid black 0px;
+    border-left: none;
+    border-right:none;
+    width: 15px;
+    height:469px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(1000,1fr);
+}
+#eval2 
+{
+    border: solid black 0px;
+    border-left: none;
+    border-right:none;
+    width:15px;
+    height:469px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(1000,1fr);
+}
+.ewhite
+{
+    background-color: #f0f0ed;
+}
+.eblack
+{
+    background-color: #000000;
 }
