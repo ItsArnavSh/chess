@@ -1,18 +1,138 @@
-//setting the global variables
-let turn=1//1 means white and 0 means black
-let moveno=0;
-let gameState=[];
-let gamer,k=[],chosen=null;
-let kpw,kpb;//king positions
-let keys;//To select all the boxes
-//This function will trigger when DOM is loaded
+"use strict";
+let turn=1;
+let gamer;
+let gamePlay;
+let prev,prevMove;
 document.addEventListener("DOMContentLoaded",()=>{
+    //This function is called when the DOM is loaded
     makeBoxes();
-    hello();
+    [gamer,gamePlay]=setPieces();
+    display(gamer);
+    let keys = document.querySelectorAll(".box");
+    for(let i = 0;i<keys.length;i++)
+    {
+        keys[i].onclick = ({target})=>{clicked(target);}
+    }
 });
+//To work with bits, we will assume the chessboard to go from 1 to 64 instead of a8 to h1.
+/*
+For Reference
+01 02 03 04 05 06 07 08
+09 10 11 12 13 14 15 16
+17 18 19 20 21 22 23 24
+25 26 27 28 29 30 31 32
+33 34 35 36 37 38 39 40
+41 42 43 44 45 46 47 48
+49 50 51 52 53 54 55 56
+57 58 59 60 61 62 63 64
+*/
+////////////////////////////////////////
 
+function numberToMap(n) {
+    //This function will take a number, and return 1, shifted by that number. 
+    //eg 3 returns 100
+    if (typeof n === 'number') {
+        n=n-1;
+        return(1n<<BigInt(n));
+    } else if (Array.isArray(n)) {
+        let k = 0n;
+        for(let i=0;i<n.length;i++)
+        {
+            n[i]--;
+            k=k|(1n<<BigInt(n[i]));
+        }
+        return k;
+    } else {
+        throw new Error('Invalid argument type, expected letter or array');
+    }
+}
+function setPieces() {
+    let gamer = [];
+    /*
+    0-5 Black's pieces
+    0-king
+    1-queen
+    2-rooks
+    3-knights
+    4-bishops
+    5-pawns
+    6-11 White's pieces
+    */
 
-//To make the chess squares
+    // Black pieces
+    gamer.push(numberToMap(5)); // Black king on e8 (5th position)
+    gamer.push(numberToMap(4)); // Black queen on d8 (4th position)
+    gamer.push(numberToMap([1, 8])); // Black rooks on a8 and h8
+    gamer.push(numberToMap([2, 7])); // Black knights on b8 and g8
+    gamer.push(numberToMap([3, 6])); // Black bishops on c8 and f8
+    gamer.push(numberToMap([9, 10, 11, 12, 13, 14, 15, 16])); // Black pawns on a7 to h7
+
+    // White pieces
+    gamer.push(numberToMap(61)); // White king on e1 (61st position)
+    gamer.push(numberToMap(60)); // White queen on d1 (60th position)
+    gamer.push(numberToMap([57, 64])); // White rooks on a1 and h1
+    gamer.push(numberToMap([58, 63])); // White knights on b1 and g1
+    gamer.push(numberToMap([59, 62])); // White bishops on c1 and f1
+    gamer.push(numberToMap([49, 50, 51, 52, 53, 54, 55, 56])); // White pawns on a2 to h2
+
+    /*
+      0 and 1 all black and white pieces
+      2- GameState TKQkqE T turn, KQkq means castle in FEN terms and E means en passant availability
+      3- Available En passant square, if not available, it is 0
+    */
+    let gamer2 = [];
+    gamer2.push(numberToMap([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])); // All black pieces
+    gamer2.push(numberToMap([49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64])); // All white pieces
+
+    // For game state
+    gamer2.push(numberToMap([1, 2, 3, 4, 5])); // Initial state, allow all castling options
+    gamer2.push(numberToMap(0)); // No en passant squares at the start of the game
+
+    return [gamer, gamer2];
+}
+function mapToNumber(bitmap)
+{
+    //We are given a map and we should return an array of coordinates
+    let coordinate=[];
+    for(let i=1;i<=64;i++)
+    {
+        if((bitmap&1n)==1n)
+                coordinate.push(i);
+            bitmap=bitmap>>1n;
+    }
+    return coordinate;
+}
+function mapToString(bitmap)
+{
+    if(bitmap==null)
+        return [];
+    //It takes the bitmap of the board, and returns an array of coordinates with the elements which had a 1
+    let coordinate = [];
+    for(let i=8;i>=1;i--)
+    {
+        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
+        {
+            let id = (`${String.fromCharCode(j)}${i}`);
+            if((bitmap&1n)==1n)
+                coordinate.push(id);
+            bitmap=bitmap>>1n;
+        }
+    }
+    return coordinate;
+}
+function coordToNum(coord)
+{
+    //We will make a formula to convert the string to the numerical notation and then the bit
+    let x = charToNumber(coord[0]);
+    let y = 9-numcharToNumber(coord[1]);
+    return(x+8*(y-1));
+}
+function charToNumber(c) {
+    return c.charCodeAt(0) - 'a'.charCodeAt(0)+1;
+}
+function numcharToNumber(c) {
+    return c.charCodeAt(0) - '0'.charCodeAt(0);
+}
 function makeBoxes()
     {
         let gamer = {};
@@ -32,510 +152,49 @@ function makeBoxes()
             board.appendChild(box);
         }
     }
-    return gamer;
-    };
-function Creator(type,team,image,sno)
+};
+function display(gamer) {
+    // The display will refresh every single move
+    for(let i=1;i<=64;i++)
     {
-        this.type = type;
-        this.team = team;
-        this.img = image
-        this.alive = 1;
-        this.sno = sno;
-        this.move = 0;
-        //team 0 for black,1 for white
-        //id = index no of the piece, like there are 8 pawns, so which one?
+        const clearer = document.getElementById(mapToString(numberToMap(i)));
+        clearer.innerHTML="";
     }
-function initializeBoxes()
-    {
-    //0 for king
-    //1 for queen
-    //2 for rook
-    //3 for knight
-    //4 for bishop
-    //5 for pawn
-    gamer.a8 = new Creator(2, 0, "pieces/rook-b.svg", 0);
-    gamer.b8 = new Creator(3, 0, "pieces/knight-b.svg", 1);
-    gamer.c8 = new Creator(4, 0, "pieces/bishop-b.svg", 2);
-    gamer.d8 = new Creator(1, 0, "pieces/queen-b.svg", 3);
-    gamer.e8 = new Creator(0, 0, "pieces/king-b.svg", 4);
-    kpb = 'e8';
-    gamer.f8 = new Creator(4, 0, "pieces/bishop-b.svg", 5);
-    gamer.g8 = new Creator(3, 0, "pieces/knight-b.svg", 6);
-    gamer.h8 = new Creator(2, 0, "pieces/rook-b.svg", 7);
-    for (let i = 0; i < 8; i++) {
-        gamer[String.fromCharCode(97 + i) + '7'] = new Creator(5, 0, "pieces/pawn-b.svg", 8 + i);
-    }
+    let coord;
+    let keys;
     
-    // Initialize white pieces
-    gamer.a1 = new Creator(2, 1, "pieces/rook-w.svg", 16);
-    gamer.b1 = new Creator(3, 1, "pieces/knight-w.svg", 17);
-    gamer.c1 = new Creator(4, 1, "pieces/bishop-w.svg", 18);
-    gamer.d1 = new Creator(1, 1, "pieces/queen-w.svg", 19);
-    gamer.e1 = new Creator(0, 1, "pieces/king-w.svg", 20);
-    kpw = 'e1';
-    gamer.f1 = new Creator(4, 1, "pieces/bishop-w.svg", 21);
-    gamer.g1 = new Creator(3, 1, "pieces/knight-w.svg", 22);
-    gamer.h1 = new Creator(2, 1, "pieces/rook-w.svg", 23);
-    for (let i = 0; i < 8; i++) {
-        gamer[String.fromCharCode(97 + i) + '2'] = new Creator(5, 1, "pieces/pawn-w.svg", 24 + i);
-    }
-    }
-function display()
-{
-    for(let i = 0;i<keys.length;i++)
-{
-    if(gamer[keys[i].id]!=null && !keys[i].querySelector('img'))
-    {
-        const img = document.createElement("img");
-        img.src = gamer[keys[i].id].img;
-        img.height = 43;
-        img.style.backgroundColor = 'transparent';
-        img.style.pointerEvents = 'none';
-        keys[i].appendChild(img);
-    }
-    else if(gamer[keys[i].id]!=null && keys[i].querySelector('img'))
-    {
-        continue;
-    }
-    else
-    { 
-    
-        if(keys[i].querySelector('img'))
-        {
-            let img = keys[i].querySelector('img');
-            keys[i].removeChild(img);
-        }
-        
-    }}
-}
-//removes paths
-function clear() {
-    let elements = document.getElementsByClassName('temp');
-    while(elements.length > 0){
-        elements[0].parentNode.removeChild(elements[0]);
-    }
-    elements = document.getElementsByClassName('red');
-    for(let l = 0;l<elements.length;l++)
-    {
-        elements[l].style.border = "1px solid black";
-    }
-}
-function checkOccupied(block)
-{
-    if(gamer[block]!=null)
-        return true;
-    return false;
-}
-//function to change the coordinate
-function changeCoord(piece,x,y)
-{
-    return `${String.fromCharCode(piece.charCodeAt(0)+x)}${parseInt(piece[1],10)+y}`;
-}
-function moves(piece)
-{
-    switch(gamer[piece].type)
-    {
-        case 0:
-            return king(piece);
-        case 1:
-            return queen(piece);
-        case 2:
-            return rook(piece);
-        case 3:
-            return knight(piece);
-        case 4:
-            return bishop(piece);
-        case 5:
-            return pawn(piece);
-    }   
-}
-function king(piece)
-{
-let moves = [];
-let checkThese = [[-1,1],[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0]];
-for(var i = 0;i<checkThese.length;i++)
-{
-    var pi = changeCoord(piece,checkThese[i][0],checkThese[i][1]);
-    if(pi in gamer)
-    {
-        if(!checkOccupied(pi))
-        moves.push(pi);
-        else if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-    }
-}
-//Checking if castle is possible
-if(gamer[piece].move==0)
-{
-    let c1 = [changeCoord(piece,1,0),changeCoord(piece,2,0)]
-    if(gamer[changeCoord(piece,1,0)]==null && gamer[changeCoord(piece,2,0)]==null && gamer[changeCoord(piece,3,0)]!=null && gamer[changeCoord(piece,3,0)].move==0)
-    {
-        if(checkForCheck(c1,piece).length==2)
-            moves.push(changeCoord(piece,2,0));
-    }
-    c1 = [changeCoord(piece,-1,0),changeCoord(piece,-2,0),changeCoord(piece,-3,0)];
-    if(gamer[changeCoord(piece,-1,0)]==null && gamer[changeCoord(piece,-2,0)]==null && gamer[changeCoord(piece,-3,0)]==null && gamer[changeCoord(piece,-4,0)]!=null && gamer[changeCoord(piece,-4,0)].move==0)
-    {
-        if(checkForCheck(c1,piece).length==3)
-            moves.push(changeCoord(piece,-2,0));
-    }
+    const pieceNames = ["king-b", "queen-b", "rook-b", "knight-b", "bishop-b", "pawn-b", "king-w", "queen-w", "rook-w", "knight-w", "bishop-w", "pawn-w"];
+    const pieceCounts = [1, 1, 2, 2, 2, 8, 1, 1, 2, 2, 2, 8];
 
-}
-
-return moves;
-}
-function queen(piece)
-{
-let moves = [];
-
-moves = bishop(piece);
-moves = moves.concat(rook(piece));
-return moves;
-}
-function rook(piece)
-{
-let moves = [];
-let pi=piece;
-//up
-while(true)
-{
-    pi = changeCoord(pi,0,1);
-    if(parseInt(pi[1],10)<=8)
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
+    for (let i = 0; i < pieceNames.length; i++) {
+        let coords = mapToString(gamer[i]);
+        for (let j = 0; j < pieceCounts[i]; j++) {
+            coord = coords[j];
+            keys = document.getElementById(coord);
+            if(keys!=null)
             {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,0,-1);
-    if(parseInt(pi[1],10)>=1)
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-//across
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,1,0);
-    if(pi[0].charCodeAt(0)-96<=8)
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,-1,0);
-    if(pi[0].charCodeAt(0)-96>=1)
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-return moves;
-}
-function knight(piece)
-{
-let moves = [];
-//permutations of 2,1,-2,-1
-//2,1|-2,1|2,-1|-2,-1|1,2|-1,2|-1,2|-1,-2
-let checkThese = [[2,1],[-2,1],[2,-1],[-2,-1],[1,2],[-1,2],[1,-2],[-1,-2]];
-for(var i = 0;i<checkThese.length;i++)
-{
-    var pi = changeCoord(piece,checkThese[i][0],checkThese[i][1]);
-    if(pi in gamer)
-    {
-        if(!checkOccupied(pi))
-        moves.push(pi);
-        else if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-    }
-}
-return moves;
-}
-function bishop(piece)
-{
-let moves = [];
-let pi=piece;
-//up
-while(true)
-{
-    pi = changeCoord(pi,1,1);
-    if(parseInt(pi[1],10)<=8 && pi[0].charCodeAt(0)-96<=8)//checked
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,1,-1);
-    if(parseInt(pi[1],10)>=1 && pi[0].charCodeAt(0)-96<=8)//checked
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-//across
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,-1,1);
-    if(pi[0].charCodeAt(0)-96>=1 && parseInt(pi[1],10)<=8)//checked
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-pi = piece;
-while(true)
-{
-    pi = changeCoord(pi,-1,-1);
-    if(pi[0].charCodeAt(0)-96>=1 && parseInt(pi[1],10)>=1)
-    {
-        if(gamer[pi]==null)
-            moves.push(pi);
-        else
-        {
-            if(gamer[pi].team!=turn)
-            {
-                moves.push(pi);
-            }
-            break;
-        } 
-    }
-    else
-        break;
-}
-return moves;
-}
-function pawn(piece)
-{
-let direction;
-if(gamer[piece].team==1)
-direction=1;
-else
-direction=-1;
-let possible;
-let moves = [];
-possible = `${piece[0]}${parseInt(piece[1],10)+direction}`;
-if(!checkOccupied(possible))
-{
-    moves.push(possible);
-if((piece[1]==2 && gamer[piece].team==1) || (piece[1]==7&& gamer[piece].team==0))
-{
-    possible = `${piece[0]}${parseInt(piece[1],10)+2*direction}`;
-    if(!checkOccupied(possible))
-        moves.push(possible);
-}}
-//checking left attack
-let left = `${String.fromCharCode(piece.charCodeAt(0)-1)}${parseInt(piece[1],10)+direction}`;
-if(piece[0]!='a' && checkOccupied(left) && turn!=gamer[left].team)
-    moves.push(left);
-//right attack
-let right = `${String.fromCharCode(piece.charCodeAt(0)+1)}${parseInt(piece[1],10)+direction}`
-if(piece[0]!='h'  && checkOccupied(right) && turn!=gamer[right].team)
-    moves.push(right);
-return moves;
-}
-function checkForCheck(k,key)
-{
-    let nk=[];
-    //k is the array of moves
-    //key is the positioncheckFor
-    for(let a=0;a<k.length;a++)
-    {
-        let c = false;
-        //We assume the move k[a] has been made
-        //We will revert it back later
-        let temp = gamer[k[a]];
-        gamer[k[a]]=gamer[key];
-        gamer[key]=null;
-
-        //Now, we will see if making that move puts our king in danger
-        turn=!turn;
-        for(let i=8;i>=1;i--)
-        {
-            for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
-            {
-                let toCheck = (`${String.fromCharCode(j)}${i}`);
-                if(gamer[toCheck]!=null&&gamer[toCheck].team==turn)
-                {
-                    let ans = moves(toCheck);
-                    lop:
-                    for(let l = 0;l<ans.length;l++)
-                    {
-                        if(gamer[ans[l]]!=null&&gamer[ans[l]].type===0 && gamer[ans[l]].team!=turn)
-                        {
-                            c=true;
-                            break lop;
-                        }
-                    }
-                }
+                const img = document.createElement("img");
+                img.src = `pieces/${pieceNames[i]}.svg`;
+                img.height = 43;
+                img.style.backgroundColor = 'transparent';
+                img.style.pointerEvents = 'none';
+                keys.appendChild(img);
             }
         }
-        if(c==false)
-        {
-            nk.push(k[a]);
-        }
-        //Reverting back
-        turn=!turn;
-        gamer[key] = gamer[k[a]];
-        gamer[k[a]]=temp;
     }
-    return(nk);
 }
-function run(target )
+function clicked(target)
 {
-    //whenever a key is pressed
     clear();
     const key = target.getAttribute("id");
-    if(k.includes(key)&& chosen!=key)
-{
-    if(gamer[key]!=null)
+    const clickedBitMap = numberToMap(coordToNum(key));
+    if((clickedBitMap&gamePlay[turn]))
     {
-        const ke = document.querySelector(`#${key}`);
-        let img = ke.querySelector('img');
-        ke.removeChild(img);
-    }
-    if(gamer[key]==null)
-        playMoveSound();
-    else
-        playCaptureSound();
-    gamer[key] = gamer[chosen];
-    gamer[chosen] = null;
-    gamer[key].move++;
-    if(gamer[key].type==0)
-    {
-        if(turn==1)
-            kpw=key;
-        else
-            kpb=key;
-    }
-    turn=!turn;
-    fenmaker();
-    checkforMate();
-    if((parseInt(key[1],10)==8&&gamer[key].team==1 && gamer[key].type==5))
-    {
-        gamer[key]=new Creator(1,1,"pieces/queen-w.svg");
-    }
-    if((gamer[key].type==5&&parseInt(key[1],10)==1)&&gamer[key].team==0)
-        gamer[key]=new Creator(1,0,"pieces/queen-b.svg");
-    k=[];
-    //castle
-    if(gamer[key].type==0 && gamer[key].move==1 && (key[0]=='g' ||key[0]=='c'))
-    {
-        if(key[0]=='g')//kingside
+        let moves = (mapToString(whichPieceIsInvoked(clickedBitMap)));
+        for(let j=0;j<moves.length;j++)
         {
-            gamer[`f${key[1]}`]=gamer[`h${key[1]}`]
-            gamer[`h${key[1]}`]=null;
-        }
-        else//queenside
-        {
-            gamer[`d${key[1]}`]=gamer[`a${key[1]}`]
-            gamer[`a${key[1]}`]=null;
-        }
-    }
-    display();
-}
-else
-{
-    k = [];
-}
-if(gamer[key]!=null)
-{
-    chosen = key;
-if(gamer[key].team==turn)
-    {
-        //Aha, the earliest instance of moves, where key contains the index
-        //Perfect
-        k = moves(key);
-        //The object chosen is at key currently and k is all posibble motions
-        k = checkForCheck(k,key);
-        for(let j=0;j<k.length;j++)
-        {
-            let change = document.getElementById(k[j]);
-            if(checkOccupied(k[j]))
+            let change = document.getElementById(moves[j]);
+            if(numberToMap(coordToNum(moves[j]))&gamePlay[turn == 1n ? 0 : 1])
             {
                 change.style.border = '2px solid red';
                 change.classList.add("red");
@@ -548,7 +207,7 @@ if(gamer[key].team==turn)
             indicator.classList.add("temp");
             indicator.style.backgroundColor = 'transparent';
             indicator.style.pointerEvents = 'none';
-            if((k[j].charCodeAt(0)+parseInt(k[j][1],10))%2==0)
+            if((moves[j].charCodeAt(0)+parseInt(moves[j][1],10))%2==0)
             {
                 indicator.style.filter = 'brightness(500%)';
                 indicator.style.opacity = '0.2';
@@ -557,175 +216,337 @@ if(gamer[key].team==turn)
             indicator.style.opacity = '0.2';
             change.appendChild(indicator);
             }
-            
         }
-        
-}
-}
-}
-function hello() {
-    //This will start the game
-    const board = document.getElementById("board");
-
-    const play = document.createElement("button");
-    play.classList.add("Play");
-    play.textContent = "Play";
-    board.appendChild(play);
-
-    const about = document.createElement("button"); // Create a new button
-    about.classList.add("About"); // Add the class "About" to the button
-    about.textContent = "About"; // Set the button's text to "About"
-    about.addEventListener('click', () => {
-        window.location.href = 'https://itsarnavsh.github.io/'; // Redirect to the specified URL
-    });
-    board.appendChild(about); // Append the button to the board
-
-    const startGame = () => {
-        console.log("Hello");
-        board.innerHTML = ''; // Clear the board
-        game();
-        board.removeEventListener('click', startGame); // Remove the event listener
-    };
-    play.addEventListener('click', startGame); // Add event listener to the "Play" button
-}
-function game()
-{
-    gamer=makeBoxes();
-    keys = document.querySelectorAll(".box");
-    initializeBoxes();
-    display();
-    //Now The Actual Game
-    for(let i = 0;i<keys.length;i++)
-    {
-        keys[i].onclick = ({target})=>{run(target);}}
-}
-function playMoveSound() {
-    const audio = new Audio('pieces/move.mp3'); // Create a new Audio object
-    audio.play(); // Play the audio file
-}
-function playCaptureSound() {
-    const audio = new Audio('pieces/capture.mp3'); // Create a new Audio object
-    audio.play(); // Play the audio file
-}
-function whoWin(team)
-{
-    const board = document.getElementById("board");
-    board.innerHTML = ''; // Clear the board
-    makeBoxes();
-    const winner = document.createElement("h1");
-    winner.classList.add("victoryScreen");
-    winner.textContent = `${team} Won`;
-    board.appendChild(winner);
-    const again = document.createElement("button");
-    again.classList.add("About");
-    again.textContent = "Play Again";
-    again.addEventListener('click', () => {
-        turn=1;
-        gamer=null;
-        chosen=null;
-        board.innerHTML = '';
-        makeBoxes();
-        hello(); // Technically Refresh
-    });
-    board.appendChild(again);
-}
-function checkforMate()
-{
-    //Checking if any move is possible for the other side
-        //turn=!turn;
-        let s=[],t=false;
-        //Every possible move
-        for(let i=8;i>=1;i--)
-        {
-        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)
-        {
-            let toCheck = (`${String.fromCharCode(j)}${i}`);
-            if(gamer[toCheck]!=null && gamer[toCheck].team==turn)
-                s.push(toCheck);
-        }}
-        //s contains every character
-        //Every possible legal move
-        let as=[];
-        for(let asd = 0;asd<s.length;asd++)
-        {
-            as=checkForCheck(moves(s[asd]),s[asd]);
-            if(as.length!=0)
-            {
-                t=true;
-            }   
-        }
-        if(t==false)
-        {
-            if(turn==1)
-                whoWin("Black");
-            else
-                whoWin("White");
-        }
-        //turn=!turn;
-}
-function fenmaker()
-{
-    let fen = '',counter=0;
-    let assigner = ['k','q','r','n','b','p','K','Q','R','N','B','P'];//The values assigned
-    for(let i=8;i>=1;i--)//top to bottom
-    {
-        for(let j='a'.charCodeAt(0);j<='h'.charCodeAt(0);j++)//left to right
-        {
-            let box = (`${String.fromCharCode(j)}${i}`);
-            if(gamer[box]!=null)
-            {
-                if(counter!=0)
-                {
-                    fen=fen+counter;
-                    counter=0;
-                }
-            let index = gamer[box].type+gamer[box].team*6;
-            fen=fen+assigner[index];
-            }
-            else if(String.fromCharCode(j)=='h')
-            {
-                counter++;
-                fen+=counter;
-                counter=0;
-            }
-            else
-                counter++;
-        }
-        if(i!=1)
-            fen+='/';
+        prevMove = clickedBitMap;
+        prev = (whichPieceIsInvoked(clickedBitMap));
     }
-    //First part done
-    if(turn==1)
-    fen+=' w ';
+    else if(prev!=undefined && (clickedBitMap & prev))
+    {
+        gamePlay[turn]&=~prevMove;
+        gamePlay[turn]|=clickedBitMap;
+        for(let i=0;i<12;i++)
+        {
+            if(gamer[i]&clickedBitMap)
+            {
+                gamer[i]&=~clickedBitMap;
+                gamePlay[turn==1?0:1]&=~clickedBitMap;
+            }
+            if(gamer[i]&prevMove)
+            {
+                gamer[i]&=~prevMove;
+                gamer[i]|=clickedBitMap;
+            }
+        }
+        display(gamer);
+        turn=turn==1?0:1;
+        console.log("Move: ",turn);
+        prevMove = undefined;
+        prev = undefined;
+    }
     else
-    fen+=' b ';
-    //Seconds part also done
-    //For the third section, castling rights
-    //KQkq
-    if(gamer['e1']!=null && gamer['e1'].move==0)
+        console.log("Empty Space");
+
+}
+function whichPieceIsInvoked(bitboard)
+{
+    //Accepts the bitboard of clicked piece and returns the bitboard with all attacks available
+    //First we need to figure out which piece is it
+    let range = turn==1?6:0;
+    for(let i = range; i < range + 6; i++) {
+        if(gamer[i] & bitboard) {
+            switch(i % 6) {
+                case 0: return king(bitboard);
+                case 1: return queen(bitboard);
+                case 2: return rook(bitboard);
+                case 3: return knight(bitboard);
+                case 4: return bishop(bitboard);
+                case 5: return pawn(bitboard);
+            }
+        }
+    }
+}
+function king(bitboard)
+{
+    //Watch this
+    /*
+    11100000
+    10100000
+    11100000
+    */
+   //This is called a cool algorithm
+   //We find the distance between this bitboard shown above and our piece
+   //Then drag it there, like a lookup blueprint
+    let kingCoord = 0b111000001010000011100000n;//the same pattern
+    //We need to shift the king to the bitboard
+    kingCoord=kingCoord<<(BigInt(mapToNumber(bitboard)[0])-15n);
+    //
+     kingCoord&=0b1111111111111111111111111111111111111111111111111111111111111111n;
+     //TLA will delete any values over 64 bits
+     // eg 101 & 11 is 01, just that but for 64 bits
+     kingCoord&=~gamePlay[turn];
+     //TLA will remove any coordinates that coincide with our own pieces
+     //We wont attack them
+     //Now there is an issue
+     //The piece when at corner would project its pieces and they got leaked to the other end
+     //As the bitboard is just one huge single dimensional array
+     //To prevent this, we see which side the piece is on and clear off the other side
+     //This bit notation below refers to the second half of the board
+     //To see if the piece is located in the second half
+     if(bitboard & 0b1111000011110000111100001111000011110000111100001111000011110000n)
+        kingCoord&=0b1111110011111100111111001111110011111100111111001111110011111100n;
+    //This notation will delete any pieces in the last two blocks
+    else
+        kingCoord&=0b0011111100111111001111110011111100111111001111110011111100111111n;
+    return kingCoord;
+}
+function queen(bitboard)
+{
+    //Queen is just rook and bishop combined
+    return(rook(bitboard)|bishop(bitboard));
+}
+function rook(bitboard)
+{
+    //I will break it down for you guys
+    //Bear with me
+    //first we make an empty map like this one
+    let rookCoord = 0b0n;
+    //A rook goes up down left right
+    //We need to compute each path
+    //Going Down
+    let temp = bitboard;
+    //The boundary condition for down
+    //11111111n<<64 is larger than ant position
+    //So if temp and that mess is not zero, that number gotta be larger than needed
+    //Hence that will be beyond the boundary and we break the loop
+    while(!(temp&(1111111n<<64n)))//number is smaller than 64 bits
     {
-         //For the white kingside
-         if(gamer['h1']!=null&&gamer['h1'].move==0)
-            fen+='K';
-         //For the white queenside
-         if(gamer['a1']!=null&&gamer['a1'].move==0)
-            fen+='Q';
+        //We are working with a board right
+        //Each one has a row of 8
+        //So we will left shift the coordinate
+        //That will take us one step down
+        temp=temp<<8n;
+        if(gamePlay[turn]&temp)
+        //If we step on our own piece, we quit the scan in that direction
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+        //If we step on their own piece,we add that to the move
+        //As we can capture those
+        //Then we quit the scan in that direction
+            rookCoord|=temp;
+            break;
+        }
+        //If nothing happens, we will add them
+        rookCoord|=temp;
+    }
+    //We need to refresh temp after every term
+    temp = bitboard;
+    //Going up
+    while(temp)
+    {
+        //As we are right shifting this time
+        //This will make it go zero in some terms
+        //Easy, not like that previous mess
+        temp=temp>>8n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            rookCoord|=temp;
+            break;
+        }
+        rookCoord|=temp;
+    }
+    temp = bitboard;
+    //Going left
+    //The first temp is if that rook is at the top and has no one to subtract to behind it
+    //The boundary condition checks if the rook is on the left wall
+    //We shift it to the right wall and then & it with all right wall coordinates
+    //IF they return 1, means they have to be at left wall
+    while(temp && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
+    {
+        temp=temp>>1n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            rookCoord|=temp;
+            break;
+        }
+        rookCoord|=temp;
+    }
+    temp = bitboard;
+    //Going Right
+    //Same as left, just without the shifting
+    //As we just have to see if they are at right
+    while(!((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
+    {
+        temp=temp<<1n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            rookCoord|=temp;
+            break;
+        }
+        rookCoord|=temp;
+    }
+    return rookCoord;
+}
+function knight(bitboard) {
+    //Watch this
+    /*
+    01010000
+    10001000
+    00o00000
+    10001000
+    01010000
+    */
+    let knightCoord = 0b0101000010001000000000001000100001010000n;
+    //We need to shift the knight to the bitboard
+    console.log(typeof(mapToNumber(bitboard)[0]));
+    knightCoord=knightCoord<<(BigInt(mapToNumber(bitboard)[0])-22n);
+    knightCoord&=0b1111111111111111111111111111111111111111111111111111111111111111n;
+     knightCoord&=~gamePlay[turn];
+     console.log(mapToNumber(knightCoord));
+     if(bitboard & 0b1111000011110000111100001111000011110000111100001111000011110000n)
+     knightCoord&=0b1111110011111100111111001111110011111100111111001111110011111100n;
+    else
+     knightCoord&=0b0011111100111111001111110011111100111111001111110011111100111111n;
+    return knightCoord;
+}
+function bishop(bitboard)
+{
+    let bishopCoord=0b0n;
+    //Up Left
+    let temp = bitboard;
+    while(temp && !((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
+    {
+        temp=temp>>9n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            bishopCoord|=temp;
+            break;
+        }
+        bishopCoord|=temp;
+    }
+    //Up Right
+    temp = bitboard;
+    while(temp && !((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)))
+    {
+        temp=temp>>7n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            bishopCoord|=temp;
+            break;
+        }
+        bishopCoord|=temp;
+    }
+    //Down Left
+    temp = bitboard;
+    while((!(temp&(11111111n<<64n))) && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
+    {
+        console.log(!(temp&(1111111n<<64n))) && (!((temp>>1n)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n)));
+        temp=temp<<7n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            bishopCoord|=temp;
+            break;
+        }
+        bishopCoord|=temp;
+    }
+    //Down right
+    temp = bitboard;
+    while((!(temp&(11111111n<<64n))) && (!((temp)&(0b00000001000000010000000100000001000000010000000100000001000000010000000n))))
+    {
+        temp=temp<<9n;
+        if(gamePlay[turn]&temp)
+            break;
+        else if(BigInt(gamePlay[turn==1?0:1])&temp)
+        {
+            bishopCoord|=temp;
+            break;
+        }
+        bishopCoord|=temp;
+    }
+    return bishopCoord;
+}
+function pawn(bitboard) {
+
+    let isWhite = !turn;
+    let pawnCoord = 0b0n;
+    let opponentPieces = gamePlay[turn == 1 ? 0 : 1];
+
+    // Pawns move differently based on color
+    if (isWhite) {
+        // White pawns move up the board (shift left)
+        let moveOneStep = bitboard << 8n;
+        let moveTwoSteps = bitboard << 16n;
+
+        // Check if the move is valid
+        moveOneStep &= ~gamePlay[0] & ~gamePlay[1]; // No pieces in the way
+        moveTwoSteps &= ~gamePlay[0] & ~gamePlay[1] & (0xFF00FF0000000000n); // No pieces in the way and on starting position
+
+        // Check captures (diagonal moves)
+        let captureLeft = (bitboard << 7n) & opponentPieces & 0xFEFEFEFEFEFEFEFEn; // Capture left
+        let captureRight = (bitboard << 9n) & opponentPieces & 0x7F7F7F7F7F7F7F7Fn; // Capture right
+
+        pawnCoord |= moveOneStep | moveTwoSteps | captureLeft | captureRight;
+
+    } else {
+        // Black pawns move down the board (shift right)
+        let moveOneStep = bitboard >> 8n;
+        let moveTwoSteps = bitboard >> 16n;
+
+        // Check if the move is valid
+        moveOneStep &= ~gamePlay[0] & ~gamePlay[1]; // No pieces in the way
+        moveTwoSteps &= ~gamePlay[0] & ~gamePlay[1] & (0x0000000000FF0000n); // No pieces in the way and on starting position
+
+        // Check captures (diagonal moves)
+        let captureLeft = (bitboard >> 9n) & opponentPieces & 0xFEFEFEFEFEFEFEFEn; // Capture left
+        let captureRight = (bitboard >> 7n) & opponentPieces & 0x7F7F7F7F7F7F7F7Fn; // Capture right
+
+        pawnCoord |= moveOneStep | moveTwoSteps | captureLeft | captureRight;
     }
 
-    if(gamer['e8']!=null&&gamer['e8'].move==0)
-    {
-         //For the black kingside
-         if(gamer['h8']!=null&&gamer['h8'].move==0)
-            fen+='k';
-         //For the black queenside
-         if(gamer['a8']!=null&&gamer['a8'].move==0)
-            fen+='q';
+    return pawnCoord;
+}
+
+function shift(bitboard,x,y)
+{
+    //This function will return your shifted bitboard by specified x and y
+    let shiftval = x+8*(y);
+    return(bitboard<<BigInt(shiftval));
+}
+function distanceBetweenStrings(a, b) {
+    console.log(a,b);
+    // Convert the chess coordinates to 0-based indices
+    let x1 = a.charCodeAt(0) - 'a'.charCodeAt(0);
+    let y1 = parseInt(a[1]) - 1;
+    let x2 = b.charCodeAt(0) - 'a'.charCodeAt(0);
+    let y2 = parseInt(b[1]) - 1;
+
+    // Calculate the distances in the x and y axes
+    let dx = Math.abs(x2 - x1);
+    let dy = Math.abs(y2 - y1);
+
+    // Return the larger distance
+    return Math.max(dx, dy);
+}
+function clear() {
+    let elements = document.getElementsByClassName('temp');
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
     }
-    //The fourth part
-    fen+=' - 0 ';
-    moveno+=turn;
-    fen+=moveno;
-    console.log(fen);
-    gameState.push(fen);
-    return(fen);
+    elements = document.getElementsByClassName('red');
+    for(let l = 0;l<elements.length;l++)
+    {
+        elements[l].style.border = "1px solid black";
+    }
 }
